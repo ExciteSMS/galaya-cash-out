@@ -3,11 +3,11 @@ import ATMScreen from "@/components/ATMScreen";
 import ProviderSelect from "@/components/ProviderSelect";
 import PhoneInput from "@/components/PhoneInput";
 import AmountSelect from "@/components/AmountSelect";
-import PinEntry from "@/components/PinEntry";
+import UssdPush from "@/components/UssdPush";
 import Receipt from "@/components/Receipt";
 import { Provider, Transaction, processPayment } from "@/lib/mockApi";
 
-type Step = "provider" | "phone" | "amount" | "pin" | "receipt";
+type Step = "provider" | "phone" | "amount" | "ussd" | "receipt";
 
 const Index = () => {
   const [step, setStep] = useState<Step>("provider");
@@ -30,20 +30,23 @@ const Index = () => {
 
   const handleAmount = (a: number) => {
     setAmount(a);
-    setStep("pin");
+    setStep("ussd");
   };
 
-  const handlePin = async (pin: string) => {
-    setLoading(true);
-    setPinError("");
-    try {
-      const tx = await processPayment(provider, phone, amount, pin);
-      setTransaction(tx);
-      setStep("receipt");
-    } catch (err: any) {
-      setPinError(err.message);
-    } finally {
-      setLoading(false);
+  const handleUssdComplete = async (success: boolean) => {
+    if (success) {
+      setLoading(true);
+      try {
+        const tx = await processPayment(provider, phone, amount, "1234");
+        setTransaction(tx);
+        setStep("receipt");
+      } catch {
+        setStep("amount");
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setStep("amount");
     }
   };
 
@@ -61,7 +64,7 @@ const Index = () => {
       {step === "provider" && <ProviderSelect onSelect={handleProvider} />}
       {step === "phone" && <PhoneInput provider={provider} onSubmit={handlePhone} onBack={() => setStep("provider")} />}
       {step === "amount" && <AmountSelect provider={provider} phone={phone} onSubmit={handleAmount} onBack={() => setStep("phone")} />}
-      {step === "pin" && <PinEntry provider={provider} phone={phone} amount={amount} onSubmit={handlePin} onBack={() => setStep("amount")} loading={loading} error={pinError} />}
+      {step === "ussd" && <UssdPush provider={provider} phone={phone} amount={amount} onComplete={handleUssdComplete} onBack={() => setStep("amount")} />}
       {step === "receipt" && transaction && <Receipt transaction={transaction} onNewTransaction={reset} />}
     </ATMScreen>
   );
