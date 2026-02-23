@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        mono: ["Share Tech Mono", "monospace"],
-        display: ["Orbitron", "sans-serif"],
+        sans: ["Inter", "sans-serif"],
+        display: ["DM Sans", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -34,6 +34,10 @@ export default {
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
+        },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
         },
         muted: {
           DEFAULT: "hsl(var(--muted))",
@@ -61,9 +65,9 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        mtn: "hsl(var(--mtn-yellow))",
-        zamtel: "hsl(var(--zamtel-green))",
-        airtel: "hsl(var(--airtel-red))",
+        mtn: "hsl(var(--mtn))",
+        zamtel: "hsl(var(--zamtel))",
+        airtel: "hsl(var(--airtel))",
       },
       borderRadius: {
         lg: "var(--radius)",

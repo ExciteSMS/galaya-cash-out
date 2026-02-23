@@ -1,72 +1,104 @@
-import { useState } from "react";
-import ATMScreen from "@/components/ATMScreen";
-import ProviderSelect from "@/components/ProviderSelect";
-import PhoneInput from "@/components/PhoneInput";
-import AmountSelect from "@/components/AmountSelect";
-import UssdPush from "@/components/UssdPush";
-import Receipt from "@/components/Receipt";
-import { Provider, Transaction, processPayment } from "@/lib/mockApi";
+import { useState, useCallback } from "react";
+import BottomNav, { Tab } from "@/components/pos/BottomNav";
+import Dashboard from "@/components/pos/Dashboard";
+import NewSale from "@/components/pos/NewSale";
+import UssdPushScreen from "@/components/pos/UssdPushScreen";
+import SaleReceipt from "@/components/pos/SaleReceipt";
+import TransactionHistory from "@/components/pos/TransactionHistory";
+import SettingsScreen from "@/components/pos/SettingsScreen";
+import { Provider, Transaction, processPayment, getMockTransactions } from "@/lib/mockApi";
 
-type Step = "provider" | "phone" | "amount" | "ussd" | "receipt";
+type SaleFlow = "idle" | "new" | "ussd" | "receipt";
 
 const Index = () => {
-  const [step, setStep] = useState<Step>("provider");
+  const [tab, setTab] = useState<Tab>("home");
+  const [saleFlow, setSaleFlow] = useState<SaleFlow>("idle");
   const [provider, setProvider] = useState<Provider>("MTN");
   const [phone, setPhone] = useState("");
   const [amount, setAmount] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [pinError, setPinError] = useState("");
   const [transaction, setTransaction] = useState<Transaction | null>(null);
+  const [transactions] = useState<Transaction[]>(() => getMockTransactions());
 
-  const handleProvider = (p: Provider) => {
+  const handleStartPayment = (p: Provider, ph: string, amt: number) => {
     setProvider(p);
-    setStep("phone");
+    setPhone(ph);
+    setAmount(amt);
+    setSaleFlow("ussd");
   };
 
-  const handlePhone = (p: string) => {
-    setPhone(p);
-    setStep("amount");
-  };
-
-  const handleAmount = (a: number) => {
-    setAmount(a);
-    setStep("ussd");
-  };
-
-  const handleUssdComplete = async (success: boolean) => {
+  const handleUssdComplete = useCallback(async (success: boolean) => {
     if (success) {
-      setLoading(true);
       try {
-        const tx = await processPayment(provider, phone, amount, "1234");
+        const tx = await processPayment(provider, phone, amount);
         setTransaction(tx);
-        setStep("receipt");
+        setSaleFlow("receipt");
       } catch {
-        setStep("amount");
-      } finally {
-        setLoading(false);
+        setSaleFlow("new");
       }
     } else {
-      setStep("amount");
+      setSaleFlow("new");
     }
-  };
+  }, [provider, phone, amount]);
 
-  const reset = () => {
-    setStep("provider");
+  const handleNewSale = () => {
+    setSaleFlow("new");
+    setTransaction(null);
     setProvider("MTN");
     setPhone("");
     setAmount(0);
-    setTransaction(null);
-    setPinError("");
   };
 
+  const handleGoHome = () => {
+    setSaleFlow("idle");
+    setTab("home");
+    setTransaction(null);
+  };
+
+  const navigateTab = (t: Tab) => {
+    if (t === "sale") {
+      handleNewSale();
+    } else {
+      setSaleFlow("idle");
+    }
+    setTab(t);
+  };
+
+  const showBottomNav = saleFlow === "idle";
+
   return (
-    <ATMScreen>
-      {step === "provider" && <ProviderSelect onSelect={handleProvider} />}
-      {step === "phone" && <PhoneInput provider={provider} onSubmit={handlePhone} onBack={() => setStep("provider")} />}
-      {step === "amount" && <AmountSelect provider={provider} phone={phone} onSubmit={handleAmount} onBack={() => setStep("phone")} />}
-      {step === "ussd" && <UssdPush provider={provider} phone={phone} amount={amount} onComplete={handleUssdComplete} onBack={() => setStep("amount")} />}
-      {step === "receipt" && transaction && <Receipt transaction={transaction} onNewTransaction={reset} />}
-    </ATMScreen>
+    <div className="min-h-screen bg-background max-w-md mx-auto relative">
+      <div className={`flex flex-col min-h-screen ${showBottomNav ? "pb-16" : ""}`}>
+        {/* Sale flow screens */}
+        {saleFlow === "new" && (
+          <NewSale onStartPayment={handleStartPayment} onCancel={handleGoHome} />
+        )}
+        {saleFlow === "ussd" && (
+          <UssdPushScreen
+            provider={provider}
+            phone={phone}
+            amount={amount}
+            onComplete={handleUssdComplete}
+            onBack={() => setSaleFlow("new")}
+          />
+        )}
+        {saleFlow === "receipt" && transaction && (
+          <SaleReceipt transaction={transaction} onNewSale={handleNewSale} onGoHome={handleGoHome} />
+        )}
+
+        {/* Tab screens (only when not in sale flow) */}
+        {saleFlow === "idle" && tab === "home" && (
+          <Dashboard transactions={transactions} onNewSale={handleNewSale} />
+        )}
+        {saleFlow === "idle" && tab === "history" && (
+          <TransactionHistory transactions={transactions} />
+        )}
+        {saleFlow === "idle" && tab === "settings" && (
+          <SettingsScreen />
+        )}
+      </div>
+
+      {showBottomNav && <BottomNav active={tab} onNavigate={navigateTab} />}
+    </div>
   );
 };
 
