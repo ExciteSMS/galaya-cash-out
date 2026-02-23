@@ -17,7 +17,7 @@ const Index = () => {
   const [phone, setPhone] = useState("");
   const [amount, setAmount] = useState(0);
   const [transaction, setTransaction] = useState<Transaction | null>(null);
-  const [transactions] = useState<Transaction[]>(() => getMockTransactions());
+  const [transactions, setTransactions] = useState<Transaction[]>(() => getMockTransactions());
 
   const handleStartPayment = (p: Provider, ph: string, amt: number) => {
     setProvider(p);
@@ -31,6 +31,7 @@ const Index = () => {
       try {
         const tx = await processPayment(provider, phone, amount);
         setTransaction(tx);
+        setTransactions(prev => [tx, ...prev]);
         setSaleFlow("receipt");
       } catch {
         setSaleFlow("new");
