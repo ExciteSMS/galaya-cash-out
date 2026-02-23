@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Provider, PRESET_AMOUNTS, calculateFee, MOCK_BALANCE } from "@/lib/mockApi";
+import { Provider, PRESET_AMOUNTS, calculateFee } from "@/lib/mockApi";
 import ATMButton from "./ATMButton";
 import { ArrowLeft, Banknote } from "lucide-react";
 
@@ -47,7 +47,7 @@ const AmountSelect = ({ provider, phone, onSubmit, onBack }: AmountSelectProps) 
         <Banknote className="w-6 h-6 text-primary mx-auto mb-1" />
         <h2 className="font-display text-sm text-primary tracking-wider">SELECT AMOUNT</h2>
         <p className="text-[10px] text-muted-foreground mt-1">
-          Sending to: {phone} • Balance: K{MOCK_BALANCE.toLocaleString()}
+          Sending to: {phone}
         </p>
       </div>
 

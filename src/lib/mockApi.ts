@@ -9,6 +9,7 @@ export interface Transaction {
   status: "pending" | "success" | "failed";
   timestamp: Date;
   reference: string;
+  type: "payment";
 }
 
 const PROVIDER_PREFIXES: Record<Provider, string[]> = {
@@ -44,15 +45,9 @@ function generateRef(): string {
 export async function processPayment(
   provider: Provider,
   phone: string,
-  amount: number,
-  pin: string
+  amount: number
 ): Promise<Transaction> {
-  // Simulate API call
-  await new Promise((r) => setTimeout(r, 2500));
-
-  if (pin !== "1234") {
-    throw new Error("Invalid PIN. Please try again.");
-  }
+  await new Promise((r) => setTimeout(r, 2000));
 
   const fee = calculateFee(amount);
 
@@ -65,9 +60,35 @@ export async function processPayment(
     status: "success",
     timestamp: new Date(),
     reference: generateRef(),
+    type: "payment",
   };
 }
 
-export const MOCK_BALANCE = 15420.5;
+// Mock transaction history
+export function getMockTransactions(): Transaction[] {
+  const providers: Provider[] = ["MTN", "Zamtel", "Airtel"];
+  const phones = ["0961234567", "0951234567", "0971234567"];
+  const amounts = [50, 100, 200, 350, 500, 1000, 1500, 2000];
+
+  const txs: Transaction[] = [];
+  for (let i = 0; i < 15; i++) {
+    const pi = i % 3;
+    const amount = amounts[i % amounts.length];
+    const d = new Date();
+    d.setHours(d.getHours() - i * 3);
+    txs.push({
+      id: crypto.randomUUID(),
+      provider: providers[pi],
+      phone: phones[pi],
+      amount,
+      fee: calculateFee(amount),
+      status: i === 4 ? "failed" : "success",
+      timestamp: d,
+      reference: generateRef(),
+      type: "payment",
+    });
+  }
+  return txs;
+}
 
 export const PRESET_AMOUNTS = [50, 100, 200, 500, 1000, 2000];
