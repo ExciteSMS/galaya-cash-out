@@ -1,5 +1,5 @@
 import { ArrowUpRight, TrendingUp, Wallet, Hash } from "lucide-react";
-import { Transaction } from "@/lib/mockApi";
+import { Transaction } from "@/lib/api";
 
 interface DashboardProps {
   transactions: Transaction[];
@@ -7,21 +7,20 @@ interface DashboardProps {
 }
 
 const Dashboard = ({ transactions, onNewSale }: DashboardProps) => {
-  const today = new Date();
+  const today = new Date().toDateString();
   const todayTxs = transactions.filter(
-    (t) => t.timestamp.toDateString() === today.toDateString() && t.status === "success"
+    (t) => new Date(t.created_at).toDateString() === today && t.status === "success"
   );
   const todayRevenue = todayTxs.reduce((sum, t) => sum + t.amount, 0);
   const todayFees = todayTxs.reduce((sum, t) => sum + t.fee, 0);
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold font-display text-foreground">Galaya POS</h1>
           <p className="text-xs text-muted-foreground">
-            {today.toLocaleDateString("en-ZM", { weekday: "long", month: "short", day: "numeric" })}
+            {new Date().toLocaleDateString("en-ZM", { weekday: "long", month: "short", day: "numeric" })}
           </p>
         </div>
         <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
@@ -29,7 +28,6 @@ const Dashboard = ({ transactions, onNewSale }: DashboardProps) => {
         </div>
       </div>
 
-      {/* Quick Sale Button */}
       <button
         onClick={onNewSale}
         className="w-full bg-primary text-primary-foreground rounded-2xl p-5 flex items-center justify-between shadow-lg hover:brightness-105 active:scale-[0.98] transition-all"
@@ -41,7 +39,6 @@ const Dashboard = ({ transactions, onNewSale }: DashboardProps) => {
         <ArrowUpRight className="w-8 h-8" />
       </button>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-card rounded-xl p-3 border border-border">
           <Wallet className="w-4 h-4 text-primary mb-1" />
@@ -60,7 +57,6 @@ const Dashboard = ({ transactions, onNewSale }: DashboardProps) => {
         </div>
       </div>
 
-      {/* Recent Transactions */}
       <div>
         <h2 className="font-display font-semibold text-sm text-foreground mb-2">Recent</h2>
         <div className="flex flex-col gap-2">
@@ -72,11 +68,7 @@ const Dashboard = ({ transactions, onNewSale }: DashboardProps) => {
               <div className="flex items-center gap-3">
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ${
-                    tx.provider === "MTN"
-                      ? "bg-mtn"
-                      : tx.provider === "Zamtel"
-                      ? "bg-zamtel"
-                      : "bg-airtel"
+                    tx.provider === "MTN" ? "bg-mtn" : tx.provider === "Zamtel" ? "bg-zamtel" : "bg-airtel"
                   }`}
                 >
                   {tx.provider[0]}
@@ -84,22 +76,21 @@ const Dashboard = ({ transactions, onNewSale }: DashboardProps) => {
                 <div>
                   <p className="text-sm font-medium text-foreground">{tx.phone}</p>
                   <p className="text-[10px] text-muted-foreground">
-                    {tx.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    {new Date(tx.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                   </p>
                 </div>
               </div>
               <div className="text-right">
                 <p className="text-sm font-semibold text-foreground">K{tx.amount.toLocaleString()}</p>
-                <p
-                  className={`text-[10px] font-medium ${
-                    tx.status === "success" ? "text-success" : "text-destructive"
-                  }`}
-                >
+                <p className={`text-[10px] font-medium ${tx.status === "success" ? "text-success" : "text-destructive"}`}>
                   {tx.status}
                 </p>
               </div>
             </div>
           ))}
+          {transactions.length === 0 && (
+            <p className="text-center text-sm text-muted-foreground py-4">No transactions yet</p>
+          )}
         </div>
       </div>
     </div>

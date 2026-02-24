@@ -1,4 +1,4 @@
-import { Transaction } from "@/lib/mockApi";
+import { Transaction } from "@/lib/api";
 import { CheckCircle, Printer, RotateCcw } from "lucide-react";
 
 interface SaleReceiptProps {
@@ -8,7 +8,7 @@ interface SaleReceiptProps {
 }
 
 const SaleReceipt = ({ transaction, onNewSale, onGoHome }: SaleReceiptProps) => {
-  const { provider, phone, amount, fee, reference, timestamp } = transaction;
+  const { provider, phone, amount, fee, reference, created_at } = transaction;
 
   return (
     <div className="flex flex-col h-full p-4">
@@ -54,7 +54,7 @@ const SaleReceipt = ({ transaction, onNewSale, onGoHome }: SaleReceiptProps) => 
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Date</span>
-            <span className="font-medium text-foreground text-xs">{timestamp.toLocaleString()}</span>
+            <span className="font-medium text-foreground text-xs">{new Date(created_at).toLocaleString()}</span>
           </div>
         </div>
       </div>

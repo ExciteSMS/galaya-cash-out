@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Provider, calculateFee } from "@/lib/mockApi";
+import { Provider, calculateFee } from "@/lib/api";
 import { Smartphone, CheckCircle, XCircle, ArrowLeft } from "lucide-react";
 
 interface UssdPushScreenProps {

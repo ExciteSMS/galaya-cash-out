@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Provider, PRESET_AMOUNTS, calculateFee, detectProvider, validatePhone } from "@/lib/mockApi";
+import { Provider, PRESET_AMOUNTS, calculateFee, detectProvider, validatePhone } from "@/lib/api";
 import { ArrowLeft, Delete } from "lucide-react";
 
 type SaleStep = "amount" | "phone" | "provider" | "confirm";

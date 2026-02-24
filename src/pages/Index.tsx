@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import BottomNav, { Tab } from "@/components/pos/BottomNav";
 import Dashboard from "@/components/pos/Dashboard";
 import NewSale from "@/components/pos/NewSale";
@@ -6,18 +6,27 @@ import UssdPushScreen from "@/components/pos/UssdPushScreen";
 import SaleReceipt from "@/components/pos/SaleReceipt";
 import TransactionHistory from "@/components/pos/TransactionHistory";
 import SettingsScreen from "@/components/pos/SettingsScreen";
-import { Provider, Transaction, processPayment, getMockTransactions } from "@/lib/mockApi";
+import AuthScreen from "@/components/pos/AuthScreen";
+import { useAuth } from "@/hooks/useAuth";
+import { Provider, Transaction, processPayment, getTransactions } from "@/lib/api";
 
 type SaleFlow = "idle" | "new" | "ussd" | "receipt";
 
 const Index = () => {
+  const { user, merchant, loading } = useAuth();
   const [tab, setTab] = useState<Tab>("home");
   const [saleFlow, setSaleFlow] = useState<SaleFlow>("idle");
   const [provider, setProvider] = useState<Provider>("MTN");
   const [phone, setPhone] = useState("");
   const [amount, setAmount] = useState(0);
   const [transaction, setTransaction] = useState<Transaction | null>(null);
-  const [transactions, setTransactions] = useState<Transaction[]>(() => getMockTransactions());
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+
+  // Fetch transactions from DB
+  useEffect(() => {
+    if (!merchant) return;
+    getTransactions().then(setTransactions).catch(console.error);
+  }, [merchant]);
 
   const handleStartPayment = (p: Provider, ph: string, amt: number) => {
     setProvider(p);
@@ -27,9 +36,9 @@ const Index = () => {
   };
 
   const handleUssdComplete = useCallback(async (success: boolean) => {
-    if (success) {
+    if (success && merchant) {
       try {
-        const tx = await processPayment(provider, phone, amount);
+        const tx = await processPayment(merchant.id, provider, phone, amount);
         setTransaction(tx);
         setTransactions(prev => [tx, ...prev]);
         setSaleFlow("receipt");
@@ -39,7 +48,7 @@ const Index = () => {
     } else {
       setSaleFlow("new");
     }
-  }, [provider, phone, amount]);
+  }, [provider, phone, amount, merchant]);
 
   const handleNewSale = () => {
     setSaleFlow("new");
@@ -64,12 +73,23 @@ const Index = () => {
     setTab(t);
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background max-w-md mx-auto flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user || !merchant) {
+    return <AuthScreen />;
+  }
+
   const showBottomNav = saleFlow === "idle";
 
   return (
     <div className="min-h-screen bg-background max-w-md mx-auto relative">
       <div className={`flex flex-col min-h-screen ${showBottomNav ? "pb-16" : ""}`}>
-        {/* Sale flow screens */}
         {saleFlow === "new" && (
           <NewSale onStartPayment={handleStartPayment} onCancel={handleGoHome} />
         )}
@@ -86,7 +106,6 @@ const Index = () => {
           <SaleReceipt transaction={transaction} onNewSale={handleNewSale} onGoHome={handleGoHome} />
         )}
 
-        {/* Tab screens (only when not in sale flow) */}
         {saleFlow === "idle" && tab === "home" && (
           <Dashboard transactions={transactions} onNewSale={handleNewSale} />
         )}
