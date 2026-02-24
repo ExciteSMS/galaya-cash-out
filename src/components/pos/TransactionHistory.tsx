@@ -1,4 +1,4 @@
-import { Transaction } from "@/lib/mockApi";
+import { Transaction } from "@/lib/api";
 import { Search } from "lucide-react";
 import { useState } from "react";
 
@@ -12,7 +12,7 @@ const TransactionHistory = ({ transactions }: TransactionHistoryProps) => {
 
   const filtered = transactions.filter((tx) => {
     if (filter !== "all" && tx.status !== filter) return false;
-    if (search && !tx.phone.includes(search) && !tx.reference.toLowerCase().includes(search.toLowerCase())) return false;
+    if (search && !tx.phone.includes(search) && !(tx.reference || "").toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
 
@@ -25,7 +25,6 @@ const TransactionHistory = ({ transactions }: TransactionHistoryProps) => {
         {transactions.length} transactions · K{totalSuccess.toLocaleString()} total
       </p>
 
-      {/* Search */}
       <div className="relative mb-3">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <input
@@ -37,7 +36,6 @@ const TransactionHistory = ({ transactions }: TransactionHistoryProps) => {
         />
       </div>
 
-      {/* Filters */}
       <div className="flex gap-2 mb-4">
         {(["all", "success", "failed"] as const).map((f) => (
           <button
@@ -54,7 +52,6 @@ const TransactionHistory = ({ transactions }: TransactionHistoryProps) => {
         ))}
       </div>
 
-      {/* List */}
       <div className="flex-1 overflow-y-auto space-y-2 pb-20">
         {filtered.map((tx) => (
           <div
@@ -72,7 +69,7 @@ const TransactionHistory = ({ transactions }: TransactionHistoryProps) => {
               <div>
                 <p className="text-sm font-medium text-foreground">{tx.phone}</p>
                 <p className="text-[10px] text-muted-foreground">
-                  {tx.timestamp.toLocaleDateString()} · {tx.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  {new Date(tx.created_at).toLocaleDateString()} · {new Date(tx.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                 </p>
                 <p className="text-[10px] text-muted-foreground font-mono">{tx.reference}</p>
               </div>

@@ -1,6 +1,9 @@
 import { Store, CreditCard, Bell, HelpCircle, LogOut } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 const SettingsScreen = () => {
+  const { merchant, logout } = useAuth();
+
   const items = [
     { icon: Store, label: "Business Profile", desc: "Store name, address" },
     { icon: CreditCard, label: "Payment Settings", desc: "Mobile money accounts" },
@@ -11,6 +14,7 @@ const SettingsScreen = () => {
   return (
     <div className="flex flex-col h-full p-4">
       <h2 className="font-display font-bold text-lg text-foreground mb-1">Settings</h2>
+      <p className="text-xs text-muted-foreground mb-1">{merchant?.name} · {merchant?.phone_number}</p>
       <p className="text-xs text-muted-foreground mb-6">Manage your POS</p>
 
       <div className="flex flex-col gap-2">
@@ -31,7 +35,7 @@ const SettingsScreen = () => {
       </div>
 
       <div className="mt-auto pt-6">
-        <button className="flex items-center gap-2 text-destructive text-sm font-medium hover:underline">
+        <button onClick={logout} className="flex items-center gap-2 text-destructive text-sm font-medium hover:underline">
           <LogOut className="w-4 h-4" /> Sign Out
         </button>
         <p className="text-[10px] text-muted-foreground mt-3">Galaya Payment Solution v2.0</p>
