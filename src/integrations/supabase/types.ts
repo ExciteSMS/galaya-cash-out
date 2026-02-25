@@ -16,23 +16,32 @@ export type Database = {
     Tables: {
       merchants: {
         Row: {
+          address: string | null
           created_at: string
           id: string
           name: string
+          notification_daily_summary: boolean | null
+          notification_transactions: boolean | null
           phone_number: string
           user_id: string
         }
         Insert: {
+          address?: string | null
           created_at?: string
           id?: string
           name?: string
+          notification_daily_summary?: boolean | null
+          notification_transactions?: boolean | null
           phone_number: string
           user_id: string
         }
         Update: {
+          address?: string | null
           created_at?: string
           id?: string
           name?: string
+          notification_daily_summary?: boolean | null
+          notification_transactions?: boolean | null
           phone_number?: string
           user_id?: string
         }
