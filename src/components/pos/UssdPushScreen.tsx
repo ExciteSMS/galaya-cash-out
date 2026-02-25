@@ -19,19 +19,15 @@ const UssdPushScreen = ({ provider, phone, amount, onComplete, onBack }: UssdPus
 
   useEffect(() => {
     if (status === "sending") {
-      const timer = setTimeout(() => setStatus("waiting"), 2000);
+      const timer = setTimeout(() => setStatus("waiting"), 1500);
       return () => clearTimeout(timer);
     }
-    if (status === "waiting") {
-      const approveTimer = setTimeout(() => setStatus("approved"), 6000);
-      return () => clearTimeout(approveTimer);
-    }
     if (status === "approved") {
-      const timer = setTimeout(() => onComplete(true), 1500);
+      const timer = setTimeout(() => onComplete(true), 1000);
       return () => clearTimeout(timer);
     }
     if (status === "rejected" || status === "timeout") {
-      const timer = setTimeout(() => onComplete(false), 2000);
+      const timer = setTimeout(() => onComplete(false), 1500);
       return () => clearTimeout(timer);
     }
   }, [status, onComplete]);

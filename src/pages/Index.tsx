@@ -38,10 +38,14 @@ const Index = () => {
   const handleUssdComplete = useCallback(async (success: boolean) => {
     if (success && merchant) {
       try {
-        const tx = await processPayment(merchant.id, provider, phone, amount);
-        setTransaction(tx);
-        setTransactions(prev => [tx, ...prev]);
-        setSaleFlow("receipt");
+        const result = await processPayment(merchant.id, provider, phone, amount);
+        if (result.success) {
+          setTransaction(result.transaction);
+          setTransactions(prev => [result.transaction, ...prev]);
+          setSaleFlow("receipt");
+        } else {
+          setSaleFlow("new");
+        }
       } catch {
         setSaleFlow("new");
       }
