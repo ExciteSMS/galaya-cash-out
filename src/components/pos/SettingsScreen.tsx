@@ -1,14 +1,27 @@
+import { useState } from "react";
 import { Store, CreditCard, Bell, HelpCircle, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import BusinessProfile from "./BusinessProfile";
+import PaymentSettings from "./PaymentSettings";
+import NotificationSettings from "./NotificationSettings";
+import HelpSupport from "./HelpSupport";
+
+type SettingsView = "main" | "profile" | "payments" | "notifications" | "help";
 
 const SettingsScreen = () => {
   const { merchant, logout } = useAuth();
+  const [view, setView] = useState<SettingsView>("main");
+
+  if (view === "profile") return <BusinessProfile onBack={() => setView("main")} />;
+  if (view === "payments") return <PaymentSettings onBack={() => setView("main")} />;
+  if (view === "notifications") return <NotificationSettings onBack={() => setView("main")} />;
+  if (view === "help") return <HelpSupport onBack={() => setView("main")} />;
 
   const items = [
-    { icon: Store, label: "Business Profile", desc: "Store name, address" },
-    { icon: CreditCard, label: "Payment Settings", desc: "Mobile money accounts" },
-    { icon: Bell, label: "Notifications", desc: "Transaction alerts" },
-    { icon: HelpCircle, label: "Help & Support", desc: "FAQ, contact us" },
+    { icon: Store, label: "Business Profile", desc: "Store name, address", key: "profile" as const },
+    { icon: CreditCard, label: "Payment Settings", desc: "Mobile money accounts", key: "payments" as const },
+    { icon: Bell, label: "Notifications", desc: "Transaction alerts", key: "notifications" as const },
+    { icon: HelpCircle, label: "Help & Support", desc: "FAQ, contact us", key: "help" as const },
   ];
 
   return (
@@ -21,6 +34,7 @@ const SettingsScreen = () => {
         {items.map((item) => (
           <button
             key={item.label}
+            onClick={() => setView(item.key)}
             className="flex items-center gap-4 bg-card border border-border rounded-xl p-4 hover:bg-muted transition-colors text-left"
           >
             <div className="w-10 h-10 bg-accent rounded-xl flex items-center justify-center">
