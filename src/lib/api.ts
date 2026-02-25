@@ -51,30 +51,16 @@ export async function processPayment(
   provider: Provider,
   phone: string,
   amount: number
-): Promise<Transaction> {
-  const fee = calculateFee(amount);
-  const reference = generateRef();
-
-  // TODO: Call real MoMo API via edge function
-  // For now, simulate a successful payment
-  await new Promise((r) => setTimeout(r, 1000));
-
-  const { data, error } = await supabase
-    .from("transactions")
-    .insert({
-      merchant_id: merchantId,
-      provider,
-      phone,
-      amount,
-      fee,
-      status: "success",
-      reference,
-    })
-    .select()
-    .single();
+): Promise<{ transaction: Transaction; success: boolean; error?: string }> {
+  const { data, error } = await supabase.functions.invoke("process-payment", {
+    body: { provider, phone, amount },
+  });
 
   if (error) throw new Error(error.message);
-  return data;
+  if (!data.success) {
+    return { transaction: data.transaction, success: false, error: data.error };
+  }
+  return { transaction: data.transaction, success: true };
 }
 
 export async function getTransactions(): Promise<Transaction[]> {
