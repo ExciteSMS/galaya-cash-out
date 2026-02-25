@@ -23,6 +23,11 @@ function phoneToEmail(phone: string) {
   return `${phone}@galaya.app`;
 }
 
+// Supabase requires min 6 char passwords; pad the 4-digit PIN
+function pinToPassword(pin: string) {
+  return `galaya_${pin}`;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [merchant, setMerchant] = useState<Merchant | null>(null);
@@ -64,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (phone: string, pin: string) => {
     const { error } = await supabase.auth.signInWithPassword({
       email: phoneToEmail(phone),
-      password: pin,
+      password: pinToPassword(pin),
     });
     if (error) return { error: "Invalid phone or PIN" };
     return {};
@@ -77,7 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: phoneToEmail(phone),
-      password: pin,
+      password: pinToPassword(pin),
     });
 
     if (authError) {
