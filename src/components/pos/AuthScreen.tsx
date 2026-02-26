@@ -39,7 +39,7 @@ const AuthScreen = () => {
 
   const handlePhoneConfirm = () => {
     if (!validatePhone(phone)) {
-      setError("Enter a valid Zambian number (e.g. 0961234567)");
+      setError("INVALID NUMBER FORMAT");
       return;
     }
     setError("");
@@ -51,7 +51,7 @@ const AuthScreen = () => {
     setError("");
     const result = await login(phone, pinValue);
     if (result.error) {
-      setError(result.error);
+      setError(result.error.toUpperCase());
       setPin("");
     }
     setLoading(false);
@@ -59,14 +59,14 @@ const AuthScreen = () => {
 
   const handleRegister = async () => {
     if (!name.trim()) {
-      setError("Enter your business name");
+      setError("ENTER BUSINESS NAME");
       return;
     }
     setLoading(true);
     setError("");
     const result = await register(phone, pin, name.trim());
     if (result.error) {
-      setError(result.error);
+      setError(result.error.toUpperCase());
     }
     setLoading(false);
   };
@@ -80,33 +80,33 @@ const AuthScreen = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background max-w-md mx-auto flex flex-col p-6">
+    <div className="flex flex-col p-4 min-h-[480px]">
       {/* Logo */}
-      <div className="text-center pt-8 pb-6">
-        <div className="w-16 h-16 bg-primary rounded-2xl mx-auto flex items-center justify-center mb-3">
-          <span className="text-primary-foreground font-display font-bold text-2xl">G</span>
+      <div className="text-center pt-4 pb-4">
+        <div className="w-14 h-14 border-2 border-primary rounded-lg mx-auto flex items-center justify-center mb-2">
+          <span className="text-primary font-display font-bold text-xl text-glow">G</span>
         </div>
-        <h1 className="font-display font-bold text-2xl text-foreground">Galaya POS</h1>
-        <p className="text-sm text-muted-foreground mt-1">Mobile Payment Solution</p>
+        <h1 className="font-display font-bold text-xl text-primary text-glow">GALAYA POS</h1>
+        <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-[0.2em]">Payment Terminal</p>
       </div>
 
       {/* Mode toggle */}
-      <div className="flex bg-card border border-border rounded-xl p-1 mb-6">
+      <div className="flex border border-border rounded-lg p-0.5 mb-4">
         <button
           onClick={() => { setMode("login"); resetFlow(); }}
-          className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
+          className={`flex-1 py-2 rounded text-xs font-mono uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 ${
             mode === "login" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
           }`}
         >
-          <LogIn className="w-4 h-4" /> Sign In
+          <LogIn className="w-3.5 h-3.5" /> Sign In
         </button>
         <button
           onClick={() => { setMode("register"); resetFlow(); }}
-          className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
+          className={`flex-1 py-2 rounded text-xs font-mono uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 ${
             mode === "register" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
           }`}
         >
-          <UserPlus className="w-4 h-4" /> Register
+          <UserPlus className="w-3.5 h-3.5" /> Register
         </button>
       </div>
 
@@ -114,24 +114,24 @@ const AuthScreen = () => {
       {step === "phone" && (
         <div className="flex flex-col flex-1">
           <div className="flex-1 flex flex-col items-center justify-center">
-            <Phone className="w-8 h-8 text-primary mb-2" />
-            <p className="text-sm text-muted-foreground mb-3">Enter your phone number</p>
-            <p className="text-3xl font-bold font-display text-foreground tracking-wider mb-1">
+            <Phone className="w-6 h-6 text-primary mb-2" />
+            <p className="text-[10px] text-muted-foreground mb-2 font-mono uppercase tracking-wider">Enter Phone Number</p>
+            <p className="text-2xl font-bold font-mono text-foreground tracking-widest mb-1">
               {phone || "0XX XXX XXXX"}
             </p>
           </div>
 
-          {error && <p className="text-destructive text-xs text-center mb-2">{error}</p>}
+          {error && <p className="text-destructive text-[10px] text-center mb-2 font-mono">{error}</p>}
 
-          <div className="grid grid-cols-3 gap-2 mb-3">
+          <div className="grid grid-cols-3 gap-1.5 mb-2">
             {["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "⌫"].map((key) =>
               key === "" ? <div key="empty" /> : (
                 <button
                   key={key}
                   onClick={() => key === "⌫" ? handleDelete() : handleNumPress(key)}
-                  className="h-14 rounded-xl bg-card border border-border text-lg font-medium text-foreground hover:bg-muted active:scale-95 transition-all flex items-center justify-center"
+                  className="h-12 rounded bg-secondary border border-border text-sm font-mono text-foreground hover:bg-primary hover:text-primary-foreground active:scale-95 transition-all flex items-center justify-center"
                 >
-                  {key === "⌫" ? <Delete className="w-5 h-5" /> : key}
+                  {key === "⌫" ? <Delete className="w-4 h-4" /> : key}
                 </button>
               )
             )}
@@ -140,9 +140,9 @@ const AuthScreen = () => {
           <button
             onClick={handlePhoneConfirm}
             disabled={phone.length < 10}
-            className="w-full bg-primary text-primary-foreground rounded-xl py-4 font-display font-bold text-base disabled:opacity-40 transition-all"
+            className="w-full bg-primary text-primary-foreground rounded-lg py-3 font-display font-bold text-sm uppercase tracking-wider disabled:opacity-40 transition-all"
           >
-            Continue
+            Continue →
           </button>
         </div>
       )}
@@ -151,36 +151,36 @@ const AuthScreen = () => {
       {step === "pin" && (
         <div className="flex flex-col flex-1">
           <div className="flex-1 flex flex-col items-center justify-center">
-            <Lock className="w-8 h-8 text-primary mb-2" />
-            <p className="text-sm text-muted-foreground mb-1">
-              {mode === "login" ? "Enter your PIN" : "Create a 4-digit PIN"}
+            <Lock className="w-6 h-6 text-primary mb-2" />
+            <p className="text-[10px] text-muted-foreground mb-1 font-mono uppercase tracking-wider">
+              {mode === "login" ? "Enter PIN" : "Create 4-Digit PIN"}
             </p>
-            <p className="text-xs text-muted-foreground mb-4">{phone}</p>
-            <div className="flex gap-4 mb-4">
+            <p className="text-[10px] text-muted-foreground mb-3 font-mono">{phone}</p>
+            <div className="flex gap-4 mb-3">
               {[0, 1, 2, 3].map((i) => (
                 <div
                   key={i}
                   className={`w-4 h-4 rounded-full border-2 transition-all ${
-                    i < pin.length ? "bg-primary border-primary" : "border-border"
+                    i < pin.length ? "bg-primary border-primary shadow-[0_0_8px_hsl(160_100%_45%/0.5)]" : "border-border"
                   }`}
                 />
               ))}
             </div>
           </div>
 
-          {error && <p className="text-destructive text-xs text-center mb-2">{error}</p>}
-          {loading && <p className="text-primary text-xs text-center mb-2 animate-pulse">Please wait...</p>}
+          {error && <p className="text-destructive text-[10px] text-center mb-2 font-mono">{error}</p>}
+          {loading && <p className="text-primary text-[10px] text-center mb-2 animate-pulse font-mono">PROCESSING...</p>}
 
-          <div className="grid grid-cols-3 gap-2 mb-3">
+          <div className="grid grid-cols-3 gap-1.5 mb-2">
             {["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "⌫"].map((key) =>
               key === "" ? <div key="empty" /> : (
                 <button
                   key={key}
                   onClick={() => key === "⌫" ? handleDelete() : handleNumPress(key)}
                   disabled={loading}
-                  className="h-14 rounded-xl bg-card border border-border text-lg font-medium text-foreground hover:bg-muted active:scale-95 transition-all flex items-center justify-center disabled:opacity-40"
+                  className="h-12 rounded bg-secondary border border-border text-sm font-mono text-foreground hover:bg-primary hover:text-primary-foreground active:scale-95 transition-all flex items-center justify-center disabled:opacity-40"
                 >
-                  {key === "⌫" ? <Delete className="w-5 h-5" /> : key}
+                  {key === "⌫" ? <Delete className="w-4 h-4" /> : key}
                 </button>
               )
             )}
@@ -188,9 +188,9 @@ const AuthScreen = () => {
 
           <button
             onClick={() => { setStep("phone"); setPin(""); setError(""); }}
-            className="text-sm text-muted-foreground text-center hover:text-foreground transition-colors"
+            className="text-[10px] text-muted-foreground text-center hover:text-foreground transition-colors font-mono uppercase tracking-wider"
           >
-            ← Change number
+            ← Change Number
           </button>
         </div>
       )}
@@ -199,31 +199,31 @@ const AuthScreen = () => {
       {step === "name" && (
         <div className="flex flex-col flex-1">
           <div className="flex-1 flex flex-col items-center justify-center">
-            <UserPlus className="w-8 h-8 text-primary mb-2" />
-            <p className="text-sm text-muted-foreground mb-4">What's your business name?</p>
+            <UserPlus className="w-6 h-6 text-primary mb-2" />
+            <p className="text-[10px] text-muted-foreground mb-3 font-mono uppercase tracking-wider">Business Name</p>
             <input
               type="text"
               placeholder="e.g. John's Shop"
               value={name}
               onChange={(e) => setName(e.target.value)}
               autoFocus
-              className="w-full bg-card border border-border rounded-xl px-4 py-3 text-center text-lg font-display text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full bg-secondary border border-border rounded-lg px-4 py-3 text-center text-base font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
 
-          {error && <p className="text-destructive text-xs text-center mb-2">{error}</p>}
+          {error && <p className="text-destructive text-[10px] text-center mb-2 font-mono">{error}</p>}
 
           <button
             onClick={handleRegister}
             disabled={loading || !name.trim()}
-            className="w-full bg-primary text-primary-foreground rounded-xl py-4 font-display font-bold text-base disabled:opacity-40 transition-all"
+            className="w-full bg-primary text-primary-foreground rounded-lg py-3 font-display font-bold text-sm uppercase tracking-wider disabled:opacity-40 transition-all"
           >
-            {loading ? "Creating account..." : "Create Account"}
+            {loading ? "Creating..." : "Create Account →"}
           </button>
 
           <button
             onClick={() => { setStep("pin"); setPin(""); setError(""); }}
-            className="text-sm text-muted-foreground text-center mt-3 hover:text-foreground transition-colors"
+            className="text-[10px] text-muted-foreground text-center mt-2 hover:text-foreground transition-colors font-mono uppercase tracking-wider"
           >
             ← Back
           </button>
