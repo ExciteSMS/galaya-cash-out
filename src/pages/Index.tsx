@@ -79,21 +79,36 @@ const Index = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background max-w-md mx-auto flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="bg-muted rounded-t-lg border border-border p-3 flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+            <span className="font-display text-xs text-primary tracking-[0.3em] uppercase text-glow">
+              Galaya Payment Terminal
+            </span>
+          </div>
+          <div className="relative bg-card border-x border-border min-h-[480px] flex items-center justify-center atm-scanline atm-vignette atm-screen">
+            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
+          <ATMBezelBottom />
+        </div>
       </div>
     );
   }
 
   if (!user || !merchant) {
-    return <AuthScreen />;
+    return (
+      <ATMFrame>
+        <AuthScreen />
+      </ATMFrame>
+    );
   }
 
   const showBottomNav = saleFlow === "idle";
 
   return (
-    <div className="min-h-screen bg-background max-w-md mx-auto relative">
-      <div className={`flex flex-col min-h-screen ${showBottomNav ? "pb-16" : ""}`}>
+    <ATMFrame>
+      <div className={`flex flex-col min-h-[480px] ${showBottomNav ? "pb-12" : ""}`}>
         {saleFlow === "new" && (
           <NewSale onStartPayment={handleStartPayment} onCancel={handleGoHome} />
         )}
@@ -119,11 +134,60 @@ const Index = () => {
         {saleFlow === "idle" && tab === "settings" && (
           <SettingsScreen />
         )}
-      </div>
 
-      {showBottomNav && <BottomNav active={tab} onNavigate={navigateTab} />}
-    </div>
+        {showBottomNav && (
+          <div className="absolute bottom-0 left-0 right-0">
+            <BottomNav active={tab} onNavigate={navigateTab} />
+          </div>
+        )}
+      </div>
+    </ATMFrame>
   );
 };
+
+const ATMBezelBottom = () => (
+  <div className="bg-muted rounded-b-lg border border-border p-3">
+    <div className="flex items-center justify-between">
+      <div className="flex gap-1">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="w-6 h-1 rounded-full bg-border" />
+        ))}
+      </div>
+      <div className="w-16 h-3 rounded-sm bg-background border border-border" />
+      <div className="flex gap-1">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="w-6 h-1 rounded-full bg-border" />
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+const ATMFrame = ({ children }: { children: React.ReactNode }) => (
+  <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="w-full max-w-md">
+      {/* Top bezel */}
+      <div className="bg-muted rounded-t-lg border border-border p-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+          <span className="font-display text-xs text-primary tracking-[0.3em] uppercase text-glow">
+            Galaya Payment Terminal
+          </span>
+        </div>
+        <div className="text-[10px] text-muted-foreground">v2.1</div>
+      </div>
+
+      {/* Screen area */}
+      <div className="relative bg-card border-x border-border overflow-hidden atm-scanline atm-vignette atm-screen">
+        <div className="relative z-[3]">
+          {children}
+        </div>
+      </div>
+
+      {/* Bottom bezel */}
+      <ATMBezelBottom />
+    </div>
+  </div>
+);
 
 export default Index;

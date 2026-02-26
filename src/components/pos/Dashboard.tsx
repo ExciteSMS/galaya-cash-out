@@ -15,81 +15,85 @@ const Dashboard = ({ transactions, onNewSale }: DashboardProps) => {
   const todayFees = todayTxs.reduce((sum, t) => sum + t.fee, 0);
 
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <div className="flex flex-col gap-3 p-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold font-display text-foreground">Galaya POS</h1>
-          <p className="text-xs text-muted-foreground">
-            {new Date().toLocaleDateString("en-ZM", { weekday: "long", month: "short", day: "numeric" })}
+          <h1 className="text-lg font-bold font-display text-primary text-glow">GALAYA POS</h1>
+          <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">
+            {new Date().toLocaleDateString("en-ZM", { weekday: "short", month: "short", day: "numeric" })}
           </p>
         </div>
-        <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
+        <div className="w-8 h-8 rounded border border-primary flex items-center justify-center text-primary font-bold text-sm text-glow">
           G
         </div>
       </div>
 
       <button
         onClick={onNewSale}
-        className="w-full bg-primary text-primary-foreground rounded-2xl p-5 flex items-center justify-between shadow-lg hover:brightness-105 active:scale-[0.98] transition-all"
+        className="w-full bg-primary/10 border border-primary text-primary rounded-lg p-4 flex items-center justify-between hover:bg-primary/20 active:scale-[0.98] transition-all group"
       >
         <div className="text-left">
-          <p className="font-display font-bold text-lg">New Sale</p>
-          <p className="text-primary-foreground/70 text-sm">Accept mobile money payment</p>
+          <p className="font-display font-bold text-glow">NEW SALE</p>
+          <p className="text-primary/60 text-xs font-mono">Accept mobile money</p>
         </div>
-        <ArrowUpRight className="w-8 h-8" />
+        <ArrowUpRight className="w-6 h-6 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
       </button>
 
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-card rounded-xl p-3 border border-border">
-          <Wallet className="w-4 h-4 text-primary mb-1" />
-          <p className="text-lg font-bold text-foreground">K{todayRevenue.toLocaleString()}</p>
-          <p className="text-[10px] text-muted-foreground">Today's Sales</p>
+      <div className="grid grid-cols-3 gap-2">
+        <div className="bg-secondary rounded-lg p-2.5 border border-border">
+          <Wallet className="w-3.5 h-3.5 text-primary mb-1" />
+          <p className="text-sm font-bold text-foreground">K{todayRevenue.toLocaleString()}</p>
+          <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Sales</p>
         </div>
-        <div className="bg-card rounded-xl p-3 border border-border">
-          <Hash className="w-4 h-4 text-primary mb-1" />
-          <p className="text-lg font-bold text-foreground">{todayTxs.length}</p>
-          <p className="text-[10px] text-muted-foreground">Transactions</p>
+        <div className="bg-secondary rounded-lg p-2.5 border border-border">
+          <Hash className="w-3.5 h-3.5 text-primary mb-1" />
+          <p className="text-sm font-bold text-foreground">{todayTxs.length}</p>
+          <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Count</p>
         </div>
-        <div className="bg-card rounded-xl p-3 border border-border">
-          <TrendingUp className="w-4 h-4 text-success mb-1" />
-          <p className="text-lg font-bold text-foreground">K{todayFees.toLocaleString()}</p>
-          <p className="text-[10px] text-muted-foreground">Fees Earned</p>
+        <div className="bg-secondary rounded-lg p-2.5 border border-border">
+          <TrendingUp className="w-3.5 h-3.5 text-success mb-1" />
+          <p className="text-sm font-bold text-foreground">K{todayFees.toLocaleString()}</p>
+          <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Fees</p>
         </div>
       </div>
 
       <div>
-        <h2 className="font-display font-semibold text-sm text-foreground mb-2">Recent</h2>
-        <div className="flex flex-col gap-2">
+        <h2 className="font-display font-semibold text-xs text-muted-foreground uppercase tracking-wider mb-2">
+          Recent Transactions
+        </h2>
+        <div className="flex flex-col gap-1.5">
           {transactions.slice(0, 5).map((tx) => (
             <div
               key={tx.id}
-              className="bg-card rounded-xl p-3 border border-border flex items-center justify-between"
+              className="bg-secondary rounded-lg p-2.5 border border-border flex items-center justify-between"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ${
-                    tx.provider === "MTN" ? "bg-mtn" : tx.provider === "Zamtel" ? "bg-zamtel" : "bg-airtel"
+                  className={`w-7 h-7 rounded flex items-center justify-center text-[10px] font-bold text-foreground border ${
+                    tx.provider === "MTN" ? "border-mtn text-mtn" : tx.provider === "Zamtel" ? "border-zamtel text-zamtel" : "border-airtel text-airtel"
                   }`}
                 >
                   {tx.provider[0]}
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-foreground">{tx.phone}</p>
-                  <p className="text-[10px] text-muted-foreground">
+                  <p className="text-xs font-medium text-foreground font-mono">{tx.phone}</p>
+                  <p className="text-[9px] text-muted-foreground">
                     {new Date(tx.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                   </p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-sm font-semibold text-foreground">K{tx.amount.toLocaleString()}</p>
-                <p className={`text-[10px] font-medium ${tx.status === "success" ? "text-success" : "text-destructive"}`}>
-                  {tx.status}
+                <p className="text-xs font-semibold text-foreground">K{tx.amount.toLocaleString()}</p>
+                <p className={`text-[9px] font-medium ${tx.status === "success" ? "text-success" : "text-destructive"}`}>
+                  {tx.status.toUpperCase()}
                 </p>
               </div>
             </div>
           ))}
           {transactions.length === 0 && (
-            <p className="text-center text-sm text-muted-foreground py-4">No transactions yet</p>
+            <p className="text-center text-xs text-muted-foreground py-4 font-mono">
+              — No transactions —
+            </p>
           )}
         </div>
       </div>
