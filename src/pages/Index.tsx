@@ -9,6 +9,7 @@ import SettingsScreen from "@/components/pos/SettingsScreen";
 import AuthScreen from "@/components/pos/AuthScreen";
 import { useAuth } from "@/hooks/useAuth";
 import { Provider, Transaction, processPayment, getTransactions } from "@/lib/api";
+import { toast } from "sonner";
 
 type SaleFlow = "idle" | "new" | "ussd" | "receipt";
 
@@ -21,38 +22,70 @@ const Index = () => {
   const [amount, setAmount] = useState(0);
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [moneyunifyTxId, setMoneyunifyTxId] = useState<string>("");
+  const [dbTxId, setDbTxId] = useState<string>("");
 
-  // Fetch transactions from DB
   useEffect(() => {
     if (!merchant) return;
     getTransactions().then(setTransactions).catch(console.error);
   }, [merchant]);
 
-  const handleStartPayment = (p: Provider, ph: string, amt: number) => {
+  const handleStartPayment = async (p: Provider, ph: string, amt: number) => {
     setProvider(p);
     setPhone(ph);
     setAmount(amt);
-    setSaleFlow("ussd");
-  };
 
-  const handleUssdComplete = useCallback(async (success: boolean) => {
-    if (success && merchant) {
-      try {
-        const result = await processPayment(merchant.id, provider, phone, amount);
-        if (result.success) {
-          setTransaction(result.transaction);
-          setTransactions(prev => [result.transaction, ...prev]);
-          setSaleFlow("receipt");
-        } else {
-          setSaleFlow("new");
-        }
-      } catch {
+    if (!merchant) return;
+
+    try {
+      // Call MoneyUnify Request to Pay
+      const result = await processPayment(merchant.id, p, ph, amt);
+
+      if (result.success && result.transaction_id) {
+        setTransaction(result.transaction);
+        setMoneyunifyTxId(result.transaction_id);
+        setDbTxId(result.transaction.id);
+        setSaleFlow("ussd");
+      } else {
+        toast.error(result.error || "Payment request failed");
         setSaleFlow("new");
       }
-    } else {
+    } catch (err: any) {
+      toast.error(err.message || "Failed to initiate payment");
       setSaleFlow("new");
     }
-  }, [provider, phone, amount, merchant]);
+  };
+
+  const handleUssdComplete = useCallback((success: boolean) => {
+    if (success && transaction) {
+      // Update local transaction status
+      const updatedTx = { ...transaction, status: "success" };
+      setTransaction(updatedTx);
+      setTransactions(prev => {
+        const existing = prev.findIndex(t => t.id === updatedTx.id);
+        if (existing >= 0) {
+          const copy = [...prev];
+          copy[existing] = updatedTx;
+          return copy;
+        }
+        return [updatedTx, ...prev];
+      });
+      setSaleFlow("receipt");
+    } else {
+      if (transaction) {
+        setTransactions(prev => {
+          const existing = prev.findIndex(t => t.id === transaction.id);
+          if (existing >= 0) {
+            const copy = [...prev];
+            copy[existing] = { ...transaction, status: "failed" };
+            return copy;
+          }
+          return [{ ...transaction, status: "failed" }, ...prev];
+        });
+      }
+      setSaleFlow("new");
+    }
+  }, [transaction]);
 
   const handleNewSale = () => {
     setSaleFlow("new");
@@ -117,6 +150,8 @@ const Index = () => {
             provider={provider}
             phone={phone}
             amount={amount}
+            transactionId={moneyunifyTxId}
+            dbTransactionId={dbTxId}
             onComplete={handleUssdComplete}
             onBack={() => setSaleFlow("new")}
           />

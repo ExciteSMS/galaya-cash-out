@@ -40,27 +40,46 @@ export function calculateFee(amount: number): number {
   return 10;
 }
 
-function generateRef(): string {
-  return "GAL" + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase();
-}
-
 export const PRESET_AMOUNTS = [50, 100, 200, 500, 1000, 2000];
+
+export interface PaymentResult {
+  transaction: Transaction;
+  success: boolean;
+  error?: string;
+  transaction_id?: string;
+  moneyunify_status?: string;
+}
 
 export async function processPayment(
   merchantId: string,
   provider: Provider,
   phone: string,
   amount: number
-): Promise<{ transaction: Transaction; success: boolean; error?: string }> {
+): Promise<PaymentResult> {
   const { data, error } = await supabase.functions.invoke("process-payment", {
     body: { provider, phone, amount },
   });
 
   if (error) throw new Error(error.message);
-  if (!data.success) {
-    return { transaction: data.transaction, success: false, error: data.error };
-  }
-  return { transaction: data.transaction, success: true };
+  return data;
+}
+
+export interface VerifyResult {
+  status: "success" | "failed" | "pending";
+  moneyunify_status: string;
+  message: string;
+}
+
+export async function verifyPayment(
+  transactionId: string,
+  dbTransactionId: string
+): Promise<VerifyResult> {
+  const { data, error } = await supabase.functions.invoke("verify-payment", {
+    body: { transaction_id: transactionId, db_transaction_id: dbTransactionId },
+  });
+
+  if (error) throw new Error(error.message);
+  return data;
 }
 
 export async function getTransactions(): Promise<Transaction[]> {

@@ -6,21 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Provider API configurations (to be replaced with real credentials)
-const PROVIDER_CONFIG: Record<string, { name: string; apiUrl: string }> = {
-  MTN: {
-    name: "MTN MoMo",
-    apiUrl: "https://sandbox.momodeveloper.mtn.com",
-  },
-  Airtel: {
-    name: "Airtel Money",
-    apiUrl: "https://openapi.airtel.africa",
-  },
-  Zamtel: {
-    name: "Zamtel Kwacha",
-    apiUrl: "https://api.zamtel.co.zm",
-  },
-};
+const MONEYUNIFY_API = "https://api.moneyunify.one/payments/request";
 
 function calculateFee(amount: number): number {
   if (amount <= 50) return 1;
@@ -31,41 +17,15 @@ function calculateFee(amount: number): number {
 }
 
 function generateRef(): string {
-  return (
-    "GAL" +
-    Date.now().toString(36).toUpperCase() +
-    Math.random().toString(36).substring(2, 6).toUpperCase()
-  );
+  return "GAL" + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase();
 }
 
-// Simulate MoMo USSD push - replace with real API calls when credentials are available
-async function initiateMoMoPush(
-  provider: string,
-  phone: string,
-  amount: number,
-  reference: string
-): Promise<{ success: boolean; providerRef?: string; error?: string }> {
-  const config = PROVIDER_CONFIG[provider];
-  if (!config) return { success: false, error: "Unknown provider" };
-
-  // TODO: Replace with real API calls per provider:
-  // MTN: POST /collection/v1_0/requesttopay with X-Reference-Id, Ocp-Apim-Subscription-Key
-  // Airtel: POST /merchant/v1/payments/ with client_id/client_secret auth
-  // Zamtel: POST /api/v1/payment/request with merchant credentials
-
-  // Realistic simulation: random 2-4s processing time
-  const processingTime = 2000 + Math.random() * 2000;
-  await new Promise((r) => setTimeout(r, processingTime));
-
-  // 90% success rate simulation
-  const success = Math.random() > 0.1;
-  if (success) {
-    return {
-      success: true,
-      providerRef: `${provider.substring(0, 3).toUpperCase()}${Date.now().toString().slice(-8)}`,
-    };
-  }
-  return { success: false, error: "Customer did not approve or timeout" };
+// Format phone: "0971234567" -> "260971234567"
+function formatPhone(phone: string): string {
+  if (phone.startsWith("0")) return "26" + phone;
+  if (phone.startsWith("+260")) return phone.replace("+", "");
+  if (phone.startsWith("260")) return phone;
+  return "260" + phone;
 }
 
 Deno.serve(async (req: Request) => {
@@ -88,10 +48,9 @@ Deno.serve(async (req: Request) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -100,18 +59,14 @@ Deno.serve(async (req: Request) => {
 
     const { provider, phone, amount } = await req.json();
 
-    // Validate inputs
     if (!provider || !phone || !amount) {
-      return new Response(
-        JSON.stringify({ error: "Missing provider, phone, or amount" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+      return new Response(JSON.stringify({ error: "Missing provider, phone, or amount" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    if (!PROVIDER_CONFIG[provider]) {
+    if (!["MTN", "Airtel", "Zamtel"].includes(provider)) {
       return new Response(JSON.stringify({ error: "Invalid provider" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -119,32 +74,25 @@ Deno.serve(async (req: Request) => {
     }
 
     if (amount < 1 || amount > 10000) {
-      return new Response(
-        JSON.stringify({ error: "Amount must be between K1 and K10,000" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+      return new Response(JSON.stringify({ error: "Amount must be between K1 and K10,000" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    // Get merchant ID
     const { data: merchantData } = await supabase.rpc("get_merchant_id");
     if (!merchantData) {
-      return new Response(
-        JSON.stringify({ error: "Merchant profile not found" }),
-        {
-          status: 404,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+      return new Response(JSON.stringify({ error: "Merchant profile not found" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const merchantId = merchantData;
     const fee = calculateFee(amount);
     const reference = generateRef();
 
-    // Create pending transaction
+    // Create pending transaction in DB
     const { data: txData, error: insertError } = await supabase
       .from("transactions")
       .insert({
@@ -160,46 +108,83 @@ Deno.serve(async (req: Request) => {
       .single();
 
     if (insertError) {
-      return new Response(
-        JSON.stringify({ error: "Failed to create transaction" }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    // Initiate MoMo push
-    const result = await initiateMoMoPush(provider, phone, amount, reference);
-
-    // Update transaction status
-    const finalStatus = result.success ? "success" : "failed";
-    const { data: updatedTx } = await supabase
-      .from("transactions")
-      .update({ status: finalStatus })
-      .eq("id", txData.id)
-      .select()
-      .single();
-
-    return new Response(
-      JSON.stringify({
-        transaction: updatedTx || txData,
-        providerRef: result.providerRef,
-        success: result.success,
-        error: result.error,
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
-  } catch (err) {
-    return new Response(
-      JSON.stringify({ error: err.message || "Internal error" }),
-      {
+      console.error("Insert error:", insertError);
+      return new Response(JSON.stringify({ error: "Failed to create transaction" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+      });
+    }
+
+    // Call MoneyUnify Request to Pay
+    const authId = Deno.env.get("MONEYUNIFY_AUTH_ID");
+    if (!authId) {
+      return new Response(JSON.stringify({ error: "Payment gateway not configured" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const formattedPhone = formatPhone(phone);
+    const body = new URLSearchParams({
+      from_payer: formattedPhone,
+      amount: String(amount),
+      auth_id: authId,
+    });
+
+    console.log("Calling MoneyUnify Request to Pay:", { phone: formattedPhone, amount, provider });
+
+    const muResponse = await fetch(MONEYUNIFY_API, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Accept": "application/json",
+      },
+      body: body.toString(),
+    });
+
+    const muData = await muResponse.json();
+    console.log("MoneyUnify response:", JSON.stringify(muData));
+
+    if (muData.isError) {
+      // Update transaction to failed
+      await supabase
+        .from("transactions")
+        .update({ status: "failed" })
+        .eq("id", txData.id);
+
+      return new Response(JSON.stringify({
+        transaction: { ...txData, status: "failed" },
+        success: false,
+        error: muData.message || "Payment request failed",
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Payment initiated — status will be "initiated" or "otp-pending"
+    // Store the MoneyUnify transaction_id in the reference field for verification
+    const muTransactionId = muData.data?.transaction_id;
+
+    await supabase
+      .from("transactions")
+      .update({ reference: muTransactionId || reference })
+      .eq("id", txData.id);
+
+    return new Response(JSON.stringify({
+      transaction: { ...txData, reference: muTransactionId || reference },
+      success: true,
+      moneyunify_status: muData.data?.status,
+      transaction_id: muTransactionId,
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (err) {
+    console.error("Process payment error:", err);
+    return new Response(JSON.stringify({ error: err.message || "Internal error" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
