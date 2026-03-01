@@ -20,12 +20,12 @@ function generateRef(): string {
   return "GAL" + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase();
 }
 
-// Format phone: "0971234567" -> "260971234567"
+// MoneyUnify expects local 10-digit format: "0971234567"
 function formatPhone(phone: string): string {
-  if (phone.startsWith("0")) return "26" + phone;
-  if (phone.startsWith("+260")) return phone.replace("+", "");
-  if (phone.startsWith("260")) return phone;
-  return "260" + phone;
+  if (phone.startsWith("+260")) return "0" + phone.slice(4);
+  if (phone.startsWith("260")) return "0" + phone.slice(3);
+  if (phone.startsWith("0") && phone.length === 10) return phone;
+  return "0" + phone;
 }
 
 Deno.serve(async (req: Request) => {
