@@ -115,10 +115,21 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Call MoneyUnify Request to Pay
-    const authId = Deno.env.get("MONEYUNIFY_AUTH_ID");
+    // Get MoneyUnify auth_id: prefer app_settings, fallback to env
+    let authId: string | null = null;
+    const { data: settingData } = await supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "moneyunify_auth_id")
+      .single();
+    if (settingData?.value) {
+      authId = settingData.value;
+    }
     if (!authId) {
-      return new Response(JSON.stringify({ error: "Payment gateway not configured" }), {
+      authId = Deno.env.get("MONEYUNIFY_AUTH_ID") || null;
+    }
+    if (!authId) {
+      return new Response(JSON.stringify({ error: "Payment gateway not configured. Set API key in admin settings." }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
