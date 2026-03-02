@@ -43,7 +43,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    let initialised = false;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      // Only handle subsequent events after initial session is loaded
+      if (!initialised) return;
       const u = session?.user ?? null;
       setUser(u);
       if (u) {
@@ -51,9 +55,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setMerchant(null);
       }
-      setLoading(false);
     });
 
+    // Use getSession as the single source of truth for initial load
     supabase.auth.getSession().then(({ data: { session } }) => {
       const u = session?.user ?? null;
       setUser(u);
@@ -61,6 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         fetchMerchant(u.id);
       }
       setLoading(false);
+      initialised = true;
     });
 
     return () => subscription.unsubscribe();
