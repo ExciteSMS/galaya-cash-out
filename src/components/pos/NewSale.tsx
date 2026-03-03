@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { Provider, PRESET_AMOUNTS, calculateFee, detectProvider, validatePhone } from "@/lib/api";
-import { ArrowLeft, Delete } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Provider, PRESET_AMOUNTS, calculateFee, detectProvider, validatePhone, lookupAccount } from "@/lib/api";
+import { ArrowLeft, Delete, User } from "lucide-react";
 
 type SaleStep = "amount" | "phone" | "provider" | "confirm";
 
@@ -20,6 +20,8 @@ const NewSale = ({ onStartPayment, onCancel }: NewSaleProps) => {
   const [amountStr, setAmountStr] = useState("");
   const [phone, setPhone] = useState("");
   const [provider, setProvider] = useState<Provider | null>(null);
+  const [accountName, setAccountName] = useState<string | null>(null);
+  const [lookingUp, setLookingUp] = useState(false);
 
   const amount = parseFloat(amountStr) || 0;
   const fee = amount > 0 ? calculateFee(amount) : 0;
@@ -56,6 +58,7 @@ const NewSale = ({ onStartPayment, onCancel }: NewSaleProps) => {
   const handlePhoneConfirm = () => {
     if (validatePhone(phone) && provider) {
       setStep("confirm");
+      doAccountLookup(phone);
     } else if (phone.length === 10 && !provider) {
       setStep("provider");
     }
@@ -64,6 +67,21 @@ const NewSale = ({ onStartPayment, onCancel }: NewSaleProps) => {
   const handleProviderSelect = (p: Provider) => {
     setProvider(p);
     setStep("confirm");
+    doAccountLookup(phone);
+  };
+
+  const doAccountLookup = async (ph: string) => {
+    setLookingUp(true);
+    setAccountName(null);
+    try {
+      const result = await lookupAccount(ph);
+      if (result.success && result.account_name) {
+        setAccountName(result.account_name);
+      }
+    } catch {
+      // Silent fail — lookup is optional
+    }
+    setLookingUp(false);
   };
 
   const handleConfirm = () => {
@@ -236,6 +254,18 @@ const NewSale = ({ onStartPayment, onCancel }: NewSaleProps) => {
                 <span className="text-muted-foreground">To</span>
                 <span className="font-medium text-foreground">{phone}</span>
               </div>
+              {lookingUp && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <div className="w-3 h-3 border border-primary border-t-transparent rounded-full animate-spin" />
+                  Looking up account...
+                </div>
+              )}
+              {accountName && (
+                <div className="flex items-center gap-2 bg-success/10 border border-success/30 rounded-lg p-2">
+                  <User className="w-3.5 h-3.5 text-success" />
+                  <span className="text-xs font-medium text-foreground">{accountName}</span>
+                </div>
+              )}
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Amount</span>
                 <span className="font-medium text-foreground">K{amount.toLocaleString()}</span>

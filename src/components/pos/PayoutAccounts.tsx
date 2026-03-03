@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Plus, Trash2, Wallet, Check } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Wallet, Check, User } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { lookupAccount } from "@/lib/api";
 import { toast } from "sonner";
 
 interface PayoutAccount {
@@ -9,6 +10,7 @@ interface PayoutAccount {
   provider: string;
   phone_number: string;
   is_default: boolean;
+  account_name?: string;
 }
 
 interface PayoutAccountsProps {
@@ -27,6 +29,8 @@ const PayoutAccounts = ({ onBack }: PayoutAccountsProps) => {
   const [adding, setAdding] = useState(false);
   const [newProvider, setNewProvider] = useState("MTN");
   const [newPhone, setNewPhone] = useState("");
+  const [verifiedName, setVerifiedName] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const fetchAccounts = async () => {
@@ -44,9 +48,34 @@ const PayoutAccounts = ({ onBack }: PayoutAccountsProps) => {
     fetchAccounts();
   }, [merchant]);
 
+  const handleVerify = async () => {
+    if (!newPhone || newPhone.length < 10) {
+      toast.error("Enter a valid 10-digit phone number");
+      return;
+    }
+    setVerifying(true);
+    setVerifiedName(null);
+    try {
+      const result = await lookupAccount(newPhone);
+      if (result.success && result.account_name) {
+        setVerifiedName(result.account_name);
+        toast.success(`Account found: ${result.account_name}`);
+      } else {
+        toast.error(result.error || "Could not verify account");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Verification failed");
+    }
+    setVerifying(false);
+  };
+
   const handleAdd = async () => {
     if (!merchant || !newPhone || newPhone.length < 10) {
       toast.error("Enter a valid phone number");
+      return;
+    }
+    if (!verifiedName) {
+      toast.error("Please verify the account first");
       return;
     }
     const isDefault = accounts.length === 0;
@@ -63,17 +92,16 @@ const PayoutAccounts = ({ onBack }: PayoutAccountsProps) => {
     toast.success("Payout account added");
     setAdding(false);
     setNewPhone("");
+    setVerifiedName(null);
     fetchAccounts();
   };
 
   const handleSetDefault = async (id: string) => {
     if (!merchant) return;
-    // Unset all defaults first
     await supabase
       .from("merchant_payout_accounts")
       .update({ is_default: false })
       .eq("merchant_id", merchant.id);
-    // Set new default
     await supabase
       .from("merchant_payout_accounts")
       .update({ is_default: true })
@@ -104,7 +132,7 @@ const PayoutAccounts = ({ onBack }: PayoutAccountsProps) => {
       </div>
 
       <p className="text-xs text-muted-foreground mb-4">
-        Add your mobile money account to receive payouts. Withdrawal fee: 1% of amount.
+        Add your mobile money account to receive payouts. MoneyUnify charges 3.5% on settlements.
       </p>
 
       {loading ? (
@@ -153,7 +181,7 @@ const PayoutAccounts = ({ onBack }: PayoutAccountsProps) => {
                 {PROVIDERS.map((p) => (
                   <button
                     key={p.value}
-                    onClick={() => setNewProvider(p.value)}
+                    onClick={() => { setNewProvider(p.value); setVerifiedName(null); }}
                     className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors ${
                       newProvider === p.value
                         ? "bg-primary text-primary-foreground"
@@ -164,19 +192,43 @@ const PayoutAccounts = ({ onBack }: PayoutAccountsProps) => {
                   </button>
                 ))}
               </div>
-              <input
-                type="tel"
-                placeholder="09XXXXXXXX"
-                value={newPhone}
-                onChange={(e) => setNewPhone(e.target.value)}
-                className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                maxLength={10}
-              />
               <div className="flex gap-2">
-                <button onClick={() => setAdding(false)} className="flex-1 py-2 rounded-lg text-xs font-medium bg-muted text-muted-foreground">
+                <input
+                  type="tel"
+                  placeholder="09XXXXXXXX"
+                  value={newPhone}
+                  onChange={(e) => { setNewPhone(e.target.value); setVerifiedName(null); }}
+                  className="flex-1 bg-background border border-border rounded-lg px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  maxLength={10}
+                />
+                <button
+                  onClick={handleVerify}
+                  disabled={verifying || newPhone.length < 10}
+                  className="px-3 py-2.5 rounded-lg bg-accent text-accent-foreground text-xs font-medium disabled:opacity-50"
+                >
+                  {verifying ? "..." : "Verify"}
+                </button>
+              </div>
+
+              {verifiedName && (
+                <div className="flex items-center gap-2 bg-success/10 border border-success/30 rounded-lg p-3">
+                  <User className="w-4 h-4 text-success" />
+                  <div>
+                    <p className="text-xs font-medium text-foreground">{verifiedName}</p>
+                    <p className="text-[10px] text-muted-foreground">Account verified ✓</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <button onClick={() => { setAdding(false); setVerifiedName(null); }} className="flex-1 py-2 rounded-lg text-xs font-medium bg-muted text-muted-foreground">
                   Cancel
                 </button>
-                <button onClick={handleAdd} className="flex-1 py-2 rounded-lg text-xs font-medium bg-primary text-primary-foreground">
+                <button
+                  onClick={handleAdd}
+                  disabled={!verifiedName}
+                  className="flex-1 py-2 rounded-lg text-xs font-medium bg-primary text-primary-foreground disabled:opacity-50"
+                >
                   Add Account
                 </button>
               </div>
@@ -193,8 +245,8 @@ const PayoutAccounts = ({ onBack }: PayoutAccountsProps) => {
       )}
 
       <div className="mt-6 bg-card border border-border rounded-xl p-4">
-        <p className="text-sm font-medium text-foreground mb-1">Withdrawal Fees</p>
-        <p className="text-xs text-muted-foreground">1% of withdrawal amount (min K1)</p>
+        <p className="text-sm font-medium text-foreground mb-1">Settlement Fees</p>
+        <p className="text-xs text-muted-foreground">3.5% charged by MoneyUnify on settlements. Min balance K100.</p>
       </div>
     </div>
   );
