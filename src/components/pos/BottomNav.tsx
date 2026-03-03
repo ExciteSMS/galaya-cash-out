@@ -1,7 +1,7 @@
-import { Home, PlusCircle, Clock, Settings } from "lucide-react";
+import { Home, PlusCircle, Clock, Wallet, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type Tab = "home" | "sale" | "history" | "settings";
+export type Tab = "home" | "sale" | "history" | "wallet" | "settings";
 
 interface BottomNavProps {
   active: Tab;
@@ -12,6 +12,7 @@ const tabs: { id: Tab; label: string; icon: typeof Home }[] = [
   { id: "home", label: "Home", icon: Home },
   { id: "sale", label: "Sale", icon: PlusCircle },
   { id: "history", label: "History", icon: Clock },
+  { id: "wallet", label: "Wallet", icon: Wallet },
   { id: "settings", label: "Settings", icon: Settings },
 ];
 

@@ -5,6 +5,7 @@ import NewSale from "@/components/pos/NewSale";
 import UssdPushScreen from "@/components/pos/UssdPushScreen";
 import SaleReceipt from "@/components/pos/SaleReceipt";
 import TransactionHistory from "@/components/pos/TransactionHistory";
+import WithdrawalScreen from "@/components/pos/WithdrawalScreen";
 import SettingsScreen from "@/components/pos/SettingsScreen";
 import AuthScreen from "@/components/pos/AuthScreen";
 import { useAuth } from "@/hooks/useAuth";
@@ -165,6 +166,9 @@ const Index = () => {
         )}
         {saleFlow === "idle" && tab === "history" && (
           <TransactionHistory transactions={transactions} />
+        )}
+        {saleFlow === "idle" && tab === "wallet" && (
+          <WithdrawalScreen transactions={transactions} onBack={() => { setTab("home"); }} />
         )}
         {saleFlow === "idle" && tab === "settings" && (
           <SettingsScreen />
