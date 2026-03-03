@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { Store, CreditCard, Bell, HelpCircle, LogOut } from "lucide-react";
+import { Store, CreditCard, Bell, HelpCircle, LogOut, Wallet, ArrowDownToLine } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import BusinessProfile from "./BusinessProfile";
 import PaymentSettings from "./PaymentSettings";
 import NotificationSettings from "./NotificationSettings";
 import HelpSupport from "./HelpSupport";
+import PayoutAccounts from "./PayoutAccounts";
 
-type SettingsView = "main" | "profile" | "payments" | "notifications" | "help";
+type SettingsView = "main" | "profile" | "payments" | "notifications" | "help" | "payout";
 
 const SettingsScreen = () => {
   const { merchant, logout } = useAuth();
@@ -16,10 +17,12 @@ const SettingsScreen = () => {
   if (view === "payments") return <PaymentSettings onBack={() => setView("main")} />;
   if (view === "notifications") return <NotificationSettings onBack={() => setView("main")} />;
   if (view === "help") return <HelpSupport onBack={() => setView("main")} />;
+  if (view === "payout") return <PayoutAccounts onBack={() => setView("main")} />;
 
   const items = [
     { icon: Store, label: "Business Profile", desc: "Store name, address", key: "profile" as const },
-    { icon: CreditCard, label: "Payment Settings", desc: "Mobile money accounts", key: "payments" as const },
+    { icon: CreditCard, label: "Payment Settings", desc: "Mobile money providers", key: "payments" as const },
+    { icon: Wallet, label: "Payout Accounts", desc: "Where you receive earnings", key: "payout" as const },
     { icon: Bell, label: "Notifications", desc: "Transaction alerts", key: "notifications" as const },
     { icon: HelpCircle, label: "Help & Support", desc: "FAQ, contact us", key: "help" as const },
   ];

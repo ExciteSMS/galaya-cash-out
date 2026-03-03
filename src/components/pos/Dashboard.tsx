@@ -13,6 +13,7 @@ const Dashboard = ({ transactions, onNewSale }: DashboardProps) => {
   );
   const todayRevenue = todayTxs.reduce((sum, t) => sum + t.amount, 0);
   const todayFees = todayTxs.reduce((sum, t) => sum + t.fee, 0);
+  const todayNet = todayRevenue - todayFees;
 
   return (
     <div className="flex flex-col gap-3 p-4">
@@ -52,8 +53,8 @@ const Dashboard = ({ transactions, onNewSale }: DashboardProps) => {
         </div>
         <div className="bg-secondary rounded-lg p-2.5 border border-border">
           <TrendingUp className="w-3.5 h-3.5 text-success mb-1" />
-          <p className="text-sm font-bold text-foreground">K{todayFees.toLocaleString()}</p>
-          <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Fees</p>
+          <p className="text-sm font-bold text-foreground">K{todayNet.toLocaleString()}</p>
+          <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Net</p>
         </div>
       </div>
 
@@ -84,6 +85,7 @@ const Dashboard = ({ transactions, onNewSale }: DashboardProps) => {
               </div>
               <div className="text-right">
                 <p className="text-xs font-semibold text-foreground">K{tx.amount.toLocaleString()}</p>
+                <p className="text-[9px] text-muted-foreground">-K{tx.fee} fee</p>
                 <p className={`text-[9px] font-medium ${tx.status === "success" ? "text-success" : "text-destructive"}`}>
                   {tx.status.toUpperCase()}
                 </p>

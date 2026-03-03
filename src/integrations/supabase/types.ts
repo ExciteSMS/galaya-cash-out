@@ -38,6 +38,92 @@ export type Database = {
         }
         Relationships: []
       }
+      disbursements: {
+        Row: {
+          amount: number
+          created_at: string
+          fee: number
+          id: string
+          merchant_id: string
+          net_amount: number
+          payout_account_id: string
+          reference: string | null
+          status: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          fee?: number
+          id?: string
+          merchant_id: string
+          net_amount: number
+          payout_account_id: string
+          reference?: string | null
+          status?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          fee?: number
+          id?: string
+          merchant_id?: string
+          net_amount?: number
+          payout_account_id?: string
+          reference?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disbursements_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disbursements_payout_account_id_fkey"
+            columns: ["payout_account_id"]
+            isOneToOne: false
+            referencedRelation: "merchant_payout_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      merchant_payout_accounts: {
+        Row: {
+          created_at: string
+          id: string
+          is_default: boolean
+          merchant_id: string
+          phone_number: string
+          provider: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          merchant_id: string
+          phone_number: string
+          provider: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          merchant_id?: string
+          phone_number?: string
+          provider?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merchant_payout_accounts_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       merchants: {
         Row: {
           address: string | null
