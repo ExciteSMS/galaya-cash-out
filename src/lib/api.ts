@@ -91,3 +91,27 @@ export async function getTransactions(): Promise<Transaction[]> {
   if (error) throw new Error(error.message);
   return data || [];
 }
+
+export interface AccountLookupResult {
+  success: boolean;
+  account_name?: string;
+  operator?: string;
+  phone?: string;
+  error?: string;
+}
+
+export async function lookupAccount(phone_number: string): Promise<AccountLookupResult> {
+  const { data, error } = await supabase.functions.invoke("account-lookup", {
+    body: { phone_number },
+  });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function processSettlement(disbursement_id: string): Promise<{ success: boolean; error?: string; reference?: string }> {
+  const { data, error } = await supabase.functions.invoke("process-settlement", {
+    body: { disbursement_id },
+  });
+  if (error) throw new Error(error.message);
+  return data;
+}
