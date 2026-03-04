@@ -69,9 +69,12 @@ const WithdrawalScreen = ({ transactions, onBack }: WithdrawalScreenProps) => {
   }, [merchant]);
 
   const withdrawalAmount = parseFloat(amount) || 0;
+  // Platform charges 1% withdrawal fee
+  const platformFee = Math.round(withdrawalAmount * 0.01 * 100) / 100;
   // MoneyUnify charges 3.5% on settlements
-  const withdrawalFee = Math.round(withdrawalAmount * 0.035 * 100) / 100;
-  const netAmount = Math.round((withdrawalAmount - withdrawalFee) * 100) / 100;
+  const gatewayFee = Math.round(withdrawalAmount * 0.035 * 100) / 100;
+  const totalFee = Math.round((platformFee + gatewayFee) * 100) / 100;
+  const netAmount = Math.round((withdrawalAmount - totalFee) * 100) / 100;
 
   const handleWithdraw = async () => {
     if (!merchant || !selectedAccount || withdrawalAmount < 100) {
@@ -90,7 +93,7 @@ const WithdrawalScreen = ({ transactions, onBack }: WithdrawalScreenProps) => {
         merchant_id: merchant.id,
         payout_account_id: selectedAccount,
         amount: withdrawalAmount,
-        fee: withdrawalFee,
+        fee: totalFee,
         net_amount: netAmount,
         status: "pending",
       }).select().single();
@@ -186,8 +189,16 @@ const WithdrawalScreen = ({ transactions, onBack }: WithdrawalScreenProps) => {
                 <span>K{withdrawalAmount.toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-muted-foreground">
-                <span>Settlement fee (3.5%)</span>
-                <span>-K{withdrawalFee.toLocaleString()}</span>
+                <span>Platform fee (1%)</span>
+                <span>-K{platformFee.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-muted-foreground">
+                <span>Gateway fee (3.5%)</span>
+                <span>-K{gatewayFee.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-muted-foreground border-t border-border pt-1">
+                <span>Total fees (4.5%)</span>
+                <span>-K{totalFee.toLocaleString()}</span>
               </div>
               <div className="flex justify-between font-medium text-foreground border-t border-border pt-1">
                 <span>You receive</span>
