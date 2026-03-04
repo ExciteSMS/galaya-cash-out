@@ -117,6 +117,50 @@ export default function AdminSettings() {
         </CardContent>
       </Card>
 
+      {/* Withdrawal / Disbursement Fees */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Withdrawal Fees</CardTitle>
+          <CardDescription>Platform fee charged to merchants on withdrawals</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="withdrawal_platform_fee_pct">Platform Fee (%)</Label>
+            <Input
+              id="withdrawal_platform_fee_pct"
+              type="number"
+              min="0"
+              max="100"
+              step="0.1"
+              value={settings.withdrawal_platform_fee_pct || "1"}
+              onChange={(e) => handleChange("withdrawal_platform_fee_pct", e.target.value)}
+              className="mt-1"
+            />
+            <p className="text-xs text-muted-foreground mt-1">Your platform revenue per withdrawal (default 1%)</p>
+          </div>
+          <div>
+            <Label htmlFor="withdrawal_gateway_fee_pct">Gateway Fee (%)</Label>
+            <Input
+              id="withdrawal_gateway_fee_pct"
+              type="number"
+              min="0"
+              max="100"
+              step="0.1"
+              value={settings.withdrawal_gateway_fee_pct || "3.5"}
+              onChange={(e) => handleChange("withdrawal_gateway_fee_pct", e.target.value)}
+              className="mt-1"
+            />
+            <p className="text-xs text-muted-foreground mt-1">MoneyUnify settlement fee (default 3.5%)</p>
+          </div>
+          <div className="bg-muted rounded-lg p-3 text-sm">
+            <p className="font-medium text-foreground">Total merchant withdrawal cost: {
+              (parseFloat(settings.withdrawal_platform_fee_pct || "1") + parseFloat(settings.withdrawal_gateway_fee_pct || "3.5")).toFixed(1)
+            }%</p>
+            <p className="text-xs text-muted-foreground mt-1">Platform keeps {settings.withdrawal_platform_fee_pct || "1"}% · Gateway takes {settings.withdrawal_gateway_fee_pct || "3.5"}%</p>
+          </div>
+        </CardContent>
+      </Card>
+
       <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto">
         <Save className="h-4 w-4 mr-2" />
         {saving ? "Saving..." : "Save All Settings"}
