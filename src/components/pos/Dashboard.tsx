@@ -1,4 +1,4 @@
-import { ArrowUpRight, TrendingUp, Wallet, Hash } from "lucide-react";
+import { ArrowUpRight, TrendingUp, Wallet, Hash, Calendar, BarChart3 } from "lucide-react";
 import { Transaction } from "@/lib/api";
 
 interface DashboardProps {
@@ -8,12 +8,16 @@ interface DashboardProps {
 
 const Dashboard = ({ transactions, onNewSale }: DashboardProps) => {
   const today = new Date().toDateString();
-  const todayTxs = transactions.filter(
-    (t) => new Date(t.created_at).toDateString() === today && t.status === "success"
-  );
+  const successTxs = transactions.filter((t) => t.status === "success");
+  const todayTxs = successTxs.filter((t) => new Date(t.created_at).toDateString() === today);
+
   const todayRevenue = todayTxs.reduce((sum, t) => sum + t.amount, 0);
   const todayFees = todayTxs.reduce((sum, t) => sum + t.fee, 0);
   const todayNet = todayRevenue - todayFees;
+
+  const allRevenue = successTxs.reduce((sum, t) => sum + t.amount, 0);
+  const allFees = successTxs.reduce((sum, t) => sum + t.fee, 0);
+  const allNet = allRevenue - allFees;
 
   return (
     <div className="flex flex-col gap-3 p-4">
@@ -40,21 +44,51 @@ const Dashboard = ({ transactions, onNewSale }: DashboardProps) => {
         <ArrowUpRight className="w-6 h-6 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
       </button>
 
-      <div className="grid grid-cols-3 gap-2">
-        <div className="bg-secondary rounded-lg p-2.5 border border-border">
-          <Wallet className="w-3.5 h-3.5 text-primary mb-1" />
-          <p className="text-sm font-bold text-foreground">K{todayRevenue.toLocaleString()}</p>
-          <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Sales</p>
+      {/* Today's Stats */}
+      <div>
+        <p className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 flex items-center gap-1">
+          <Calendar className="w-3 h-3" /> Today
+        </p>
+        <div className="grid grid-cols-3 gap-2">
+          <div className="bg-secondary rounded-lg p-2.5 border border-border">
+            <Wallet className="w-3.5 h-3.5 text-primary mb-1" />
+            <p className="text-sm font-bold text-foreground">K{todayRevenue.toLocaleString()}</p>
+            <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Sales</p>
+          </div>
+          <div className="bg-secondary rounded-lg p-2.5 border border-border">
+            <Hash className="w-3.5 h-3.5 text-primary mb-1" />
+            <p className="text-sm font-bold text-foreground">{todayTxs.length}</p>
+            <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Count</p>
+          </div>
+          <div className="bg-secondary rounded-lg p-2.5 border border-border">
+            <TrendingUp className="w-3.5 h-3.5 text-success mb-1" />
+            <p className="text-sm font-bold text-foreground">K{todayNet.toLocaleString()}</p>
+            <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Net</p>
+          </div>
         </div>
-        <div className="bg-secondary rounded-lg p-2.5 border border-border">
-          <Hash className="w-3.5 h-3.5 text-primary mb-1" />
-          <p className="text-sm font-bold text-foreground">{todayTxs.length}</p>
-          <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Count</p>
-        </div>
-        <div className="bg-secondary rounded-lg p-2.5 border border-border">
-          <TrendingUp className="w-3.5 h-3.5 text-success mb-1" />
-          <p className="text-sm font-bold text-foreground">K{todayNet.toLocaleString()}</p>
-          <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Net</p>
+      </div>
+
+      {/* All-Time Stats */}
+      <div>
+        <p className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 flex items-center gap-1">
+          <BarChart3 className="w-3 h-3" /> All Time
+        </p>
+        <div className="grid grid-cols-3 gap-2">
+          <div className="bg-secondary rounded-lg p-2.5 border border-border">
+            <Wallet className="w-3.5 h-3.5 text-primary mb-1" />
+            <p className="text-sm font-bold text-foreground">K{allRevenue.toLocaleString()}</p>
+            <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Sales</p>
+          </div>
+          <div className="bg-secondary rounded-lg p-2.5 border border-border">
+            <Hash className="w-3.5 h-3.5 text-primary mb-1" />
+            <p className="text-sm font-bold text-foreground">{successTxs.length}</p>
+            <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Count</p>
+          </div>
+          <div className="bg-secondary rounded-lg p-2.5 border border-border">
+            <TrendingUp className="w-3.5 h-3.5 text-success mb-1" />
+            <p className="text-sm font-bold text-foreground">K{allNet.toLocaleString()}</p>
+            <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Net</p>
+          </div>
         </div>
       </div>
 

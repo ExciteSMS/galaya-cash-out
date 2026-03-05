@@ -5,15 +5,17 @@ import { Navigate } from "react-router-dom";
 import AdminDashboard from "@/components/admin/AdminDashboard";
 import AdminTransactions from "@/components/admin/AdminTransactions";
 import AdminMerchants from "@/components/admin/AdminMerchants";
+import AdminDisbursements from "@/components/admin/AdminDisbursements";
 import AdminSettings from "@/components/admin/AdminSettings";
-import { LayoutDashboard, ArrowLeftRight, Users, Settings, LogOut, Shield } from "lucide-react";
+import { LayoutDashboard, ArrowLeftRight, Users, Settings, LogOut, Shield, ArrowDownToLine } from "lucide-react";
 
-type AdminTab = "dashboard" | "transactions" | "merchants" | "settings";
+type AdminTab = "dashboard" | "transactions" | "merchants" | "disbursements" | "settings";
 
 const navItems: { tab: AdminTab; label: string; icon: React.ElementType }[] = [
   { tab: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { tab: "transactions", label: "Transactions", icon: ArrowLeftRight },
   { tab: "merchants", label: "Merchants", icon: Users },
+  { tab: "disbursements", label: "Disbursements", icon: ArrowDownToLine },
   { tab: "settings", label: "Settings", icon: Settings },
 ];
 
@@ -36,7 +38,6 @@ export default function Admin() {
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Sidebar */}
       <aside className="w-64 border-r border-border bg-card flex flex-col">
         <div className="p-4 border-b border-border">
           <div className="flex items-center gap-2">
@@ -75,11 +76,11 @@ export default function Admin() {
         </div>
       </aside>
 
-      {/* Main content */}
       <main className="flex-1 p-6 overflow-auto">
         {activeTab === "dashboard" && <AdminDashboard />}
         {activeTab === "transactions" && <AdminTransactions />}
         {activeTab === "merchants" && <AdminMerchants />}
+        {activeTab === "disbursements" && <AdminDisbursements />}
         {activeTab === "settings" && <AdminSettings />}
       </main>
     </div>
