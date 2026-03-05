@@ -41,3 +41,35 @@ export async function getAllTransactions() {
   if (error) throw new Error(error.message);
   return data || [];
 }
+
+export async function getAllDisbursements() {
+  const { data, error } = await supabase
+    .from("disbursements")
+    .select("*, merchants(name, phone_number)")
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return data || [];
+}
+
+export async function getPublicSettings(): Promise<Record<string, string>> {
+  // For merchant-side: read withdrawal fee settings via edge function or public access
+  // Since app_settings is admin-only, we use a simple fallback approach
+  const defaults: Record<string, string> = {
+    withdrawal_platform_fee_pct: "1",
+    withdrawal_gateway_fee_pct: "3.5",
+  };
+  
+  try {
+    const { data } = await supabase
+      .from("app_settings")
+      .select("key, value")
+      .in("key", ["withdrawal_platform_fee_pct", "withdrawal_gateway_fee_pct"]);
+    if (data) {
+      data.forEach((s) => (defaults[s.key] = s.value));
+    }
+  } catch {
+    // Fall back to defaults if RLS blocks
+  }
+  
+  return defaults;
+}

@@ -34,6 +34,8 @@ const WithdrawalScreen = ({ transactions, onBack }: WithdrawalScreenProps) => {
   const [amount, setAmount] = useState("");
   const [selectedAccount, setSelectedAccount] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
+  const [platformFeePct, setPlatformFeePct] = useState(1);
+  const [gatewayFeePct, setGatewayFeePct] = useState(3.5);
 
   const totalEarnings = transactions
     .filter((t) => t.status === "success")
@@ -64,15 +66,29 @@ const WithdrawalScreen = ({ transactions, onBack }: WithdrawalScreenProps) => {
       setDisbursements(disbursementsRes.data || []);
       const defaultAcc = (accountsRes.data || []).find((a) => a.is_default);
       if (defaultAcc) setSelectedAccount(defaultAcc.id);
+
+      // Try to load fee settings
+      try {
+        const { data: settings } = await supabase
+          .from("app_settings")
+          .select("key, value")
+          .in("key", ["withdrawal_platform_fee_pct", "withdrawal_gateway_fee_pct"]);
+        if (settings) {
+          settings.forEach((s) => {
+            if (s.key === "withdrawal_platform_fee_pct") setPlatformFeePct(parseFloat(s.value) || 1);
+            if (s.key === "withdrawal_gateway_fee_pct") setGatewayFeePct(parseFloat(s.value) || 3.5);
+          });
+        }
+      } catch {
+        // Use defaults
+      }
     };
     fetchData();
   }, [merchant]);
 
   const withdrawalAmount = parseFloat(amount) || 0;
-  // Platform charges 1% withdrawal fee
-  const platformFee = Math.round(withdrawalAmount * 0.01 * 100) / 100;
-  // MoneyUnify charges 3.5% on settlements
-  const gatewayFee = Math.round(withdrawalAmount * 0.035 * 100) / 100;
+  const platformFee = Math.round(withdrawalAmount * (platformFeePct / 100) * 100) / 100;
+  const gatewayFee = Math.round(withdrawalAmount * (gatewayFeePct / 100) * 100) / 100;
   const totalFee = Math.round((platformFee + gatewayFee) * 100) / 100;
   const netAmount = Math.round((withdrawalAmount - totalFee) * 100) / 100;
 
@@ -88,7 +104,6 @@ const WithdrawalScreen = ({ transactions, onBack }: WithdrawalScreenProps) => {
 
     setSubmitting(true);
     try {
-      // Create disbursement record
       const { data: newDisb, error: insertErr } = await supabase.from("disbursements").insert({
         merchant_id: merchant.id,
         payout_account_id: selectedAccount,
@@ -104,7 +119,6 @@ const WithdrawalScreen = ({ transactions, onBack }: WithdrawalScreenProps) => {
         return;
       }
 
-      // Process the settlement via MoneyUnify
       const result = await processSettlement(newDisb.id);
 
       if (result.success) {
@@ -113,7 +127,6 @@ const WithdrawalScreen = ({ transactions, onBack }: WithdrawalScreenProps) => {
         toast.error(result.error || "Settlement failed");
       }
 
-      // Refresh disbursements
       const { data } = await supabase
         .from("disbursements")
         .select("*")
@@ -139,7 +152,6 @@ const WithdrawalScreen = ({ transactions, onBack }: WithdrawalScreenProps) => {
         </div>
       </div>
 
-      {/* Balance card */}
       <div className="bg-primary/10 border border-primary/30 rounded-xl p-4 mb-4">
         <p className="text-xs text-muted-foreground mb-1">Available Balance</p>
         <p className="text-2xl font-bold text-primary font-display">K{availableBalance.toLocaleString()}</p>
@@ -189,15 +201,15 @@ const WithdrawalScreen = ({ transactions, onBack }: WithdrawalScreenProps) => {
                 <span>K{withdrawalAmount.toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-muted-foreground">
-                <span>Platform fee (1%)</span>
+                <span>Platform fee ({platformFeePct}%)</span>
                 <span>-K{platformFee.toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-muted-foreground">
-                <span>Gateway fee (3.5%)</span>
+                <span>Gateway fee ({gatewayFeePct}%)</span>
                 <span>-K{gatewayFee.toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-muted-foreground border-t border-border pt-1">
-                <span>Total fees (4.5%)</span>
+                <span>Total fees ({(platformFeePct + gatewayFeePct).toFixed(1)}%)</span>
                 <span>-K{totalFee.toLocaleString()}</span>
               </div>
               <div className="flex justify-between font-medium text-foreground border-t border-border pt-1">
