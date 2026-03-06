@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { getSettings, updateSetting } from "@/lib/adminApi";
+import { getSettings, updateSetting, upsertSetting } from "@/lib/adminApi";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Eye, EyeOff, Save } from "lucide-react";
+import { Eye, EyeOff, Save, Zap } from "lucide-react";
 
 const FEE_KEYS = [
   { key: "fee_tier_50", label: "Up to K50" },
@@ -19,7 +20,8 @@ export default function AdminSettings() {
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [showKey, setShowKey] = useState(false);
+  const [showMoneyUnifyKey, setShowMoneyUnifyKey] = useState(false);
+  const [showLipilaKey, setShowLipilaKey] = useState(false);
 
   useEffect(() => {
     getSettings().then((data) => {
@@ -34,11 +36,15 @@ export default function AdminSettings() {
     setSettings((prev) => ({ ...prev, [key]: value }));
   };
 
+  const handleToggle = (key: string, checked: boolean) => {
+    setSettings((prev) => ({ ...prev, [key]: checked ? "true" : "false" }));
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
       const promises = Object.entries(settings).map(([key, value]) =>
-        updateSetting(key, value)
+        upsertSetting(key, value)
       );
       await Promise.all(promises);
       toast.success("Settings saved successfully");
@@ -52,42 +58,107 @@ export default function AdminSettings() {
     return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
   }
 
+  const callbackUrl = `${window.location.origin.replace('lovable.app', 'supabase.co')}/functions/v1/lipila-callback`;
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold font-display">Settings</h1>
 
-      {/* API Key */}
+      {/* Payment Gateways */}
       <Card>
         <CardHeader>
-          <CardTitle>Payment Gateway</CardTitle>
-          <CardDescription>MoneyUnify API credentials for mobile money processing</CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <Zap className="h-5 w-5 text-primary" />
+            Payment Gateways
+          </CardTitle>
+          <CardDescription>Enable/disable payment methods and configure API credentials</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div>
-            <Label htmlFor="api-key">MoneyUnify Auth ID</Label>
-            <div className="flex gap-2 mt-1">
-              <div className="relative flex-1">
-                <Input
-                  id="api-key"
-                  type={showKey ? "text" : "password"}
-                  value={settings.moneyunify_auth_id || ""}
-                  onChange={(e) => handleChange("moneyunify_auth_id", e.target.value)}
-                  placeholder="Enter your MoneyUnify auth_id"
-                  className="pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowKey(!showKey)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+        <CardContent className="space-y-6">
+          {/* MoneyUnify */}
+          <div className="border rounded-lg p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-foreground">MoneyUnify</h3>
+                <p className="text-xs text-muted-foreground">MTN, Airtel, Zamtel via MoneyUnify</p>
               </div>
+              <Switch
+                checked={settings.gateway_moneyunify_enabled !== "false"}
+                onCheckedChange={(checked) => handleToggle("gateway_moneyunify_enabled", checked)}
+              />
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Get this from your MoneyUnify dashboard at moneyunify.one
-            </p>
+            {settings.gateway_moneyunify_enabled !== "false" && (
+              <div>
+                <Label htmlFor="mu-key">Auth ID</Label>
+                <div className="relative mt-1">
+                  <Input
+                    id="mu-key"
+                    type={showMoneyUnifyKey ? "text" : "password"}
+                    value={settings.moneyunify_auth_id || ""}
+                    onChange={(e) => handleChange("moneyunify_auth_id", e.target.value)}
+                    placeholder="Enter your MoneyUnify auth_id"
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowMoneyUnifyKey(!showMoneyUnifyKey)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showMoneyUnifyKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Get this from moneyunify.one</p>
+              </div>
+            )}
           </div>
+
+          {/* Lipila */}
+          <div className="border rounded-lg p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-foreground">Lipila</h3>
+                <p className="text-xs text-muted-foreground">MoMo Collections via Lipila</p>
+              </div>
+              <Switch
+                checked={settings.gateway_lipila_enabled === "true"}
+                onCheckedChange={(checked) => handleToggle("gateway_lipila_enabled", checked)}
+              />
+            </div>
+            {settings.gateway_lipila_enabled === "true" && (
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="lipila-key">API Key</Label>
+                  <div className="relative mt-1">
+                    <Input
+                      id="lipila-key"
+                      type={showLipilaKey ? "text" : "password"}
+                      value={settings.lipila_api_key || ""}
+                      onChange={(e) => handleChange("lipila_api_key", e.target.value)}
+                      placeholder="Enter your Lipila API key"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowLipilaKey(!showLipilaKey)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showLipilaKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Get this from your Lipila dashboard at lipila.dev</p>
+                </div>
+                <div className="bg-muted rounded-lg p-3 text-xs space-y-1">
+                  <p className="font-medium text-foreground">Callback URL (add to Lipila dashboard):</p>
+                  <code className="block bg-background p-2 rounded text-[10px] break-all select-all">{callbackUrl}</code>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {settings.gateway_lipila_enabled === "true" && settings.gateway_moneyunify_enabled !== "false" && (
+            <div className="bg-accent/50 rounded-lg p-3 text-xs text-accent-foreground">
+              <p className="font-medium">⚡ Both gateways enabled — Lipila will be used as the primary gateway.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -117,7 +188,7 @@ export default function AdminSettings() {
         </CardContent>
       </Card>
 
-      {/* Withdrawal / Disbursement Fees */}
+      {/* Withdrawal Fees */}
       <Card>
         <CardHeader>
           <CardTitle>Withdrawal Fees</CardTitle>
@@ -150,7 +221,7 @@ export default function AdminSettings() {
               onChange={(e) => handleChange("withdrawal_gateway_fee_pct", e.target.value)}
               className="mt-1"
             />
-            <p className="text-xs text-muted-foreground mt-1">MoneyUnify settlement fee (default 3.5%)</p>
+            <p className="text-xs text-muted-foreground mt-1">Gateway settlement fee (default 3.5%)</p>
           </div>
           <div className="bg-muted rounded-lg p-3 text-sm">
             <p className="font-medium text-foreground">Total merchant withdrawal cost: {
