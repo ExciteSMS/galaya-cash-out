@@ -24,6 +24,13 @@ export async function updateSetting(key: string, value: string): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
+export async function upsertSetting(key: string, value: string): Promise<void> {
+  const { error } = await supabase
+    .from("app_settings")
+    .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: "key" });
+  if (error) throw new Error(error.message);
+}
+
 export async function getAllMerchants() {
   const { data, error } = await supabase
     .from("merchants")
