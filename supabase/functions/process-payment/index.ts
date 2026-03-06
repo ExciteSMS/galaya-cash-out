@@ -7,6 +7,7 @@ const corsHeaders = {
 };
 
 const MONEYUNIFY_API = "https://api.moneyunify.one/payments/request";
+const LIPILA_API = "https://api.lipila.dev/api/v1/collections/mobile-money";
 
 function calculateFee(amount: number): number {
   if (amount <= 50) return 1;
@@ -20,12 +21,115 @@ function generateRef(): string {
   return "GAL" + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase();
 }
 
-// MoneyUnify expects local 10-digit format: "0971234567"
-function formatPhone(phone: string): string {
+function formatPhoneLocal(phone: string): string {
   if (phone.startsWith("+260")) return "0" + phone.slice(4);
   if (phone.startsWith("260")) return "0" + phone.slice(3);
   if (phone.startsWith("0") && phone.length === 10) return phone;
   return "0" + phone;
+}
+
+function formatPhoneInternational(phone: string): string {
+  if (phone.startsWith("+260")) return phone.slice(1);
+  if (phone.startsWith("260") && phone.length === 12) return phone;
+  if (phone.startsWith("0") && phone.length === 10) return "260" + phone.slice(1);
+  return "260" + phone;
+}
+
+async function getActiveGateway(supabase: any): Promise<{ gateway: string; credentials: Record<string, string> }> {
+  const adminClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  );
+
+  const { data: settings } = await adminClient
+    .from("app_settings")
+    .select("key, value")
+    .in("key", ["gateway_lipila_enabled", "gateway_moneyunify_enabled", "lipila_api_key", "moneyunify_auth_id"]);
+
+  const map: Record<string, string> = {};
+  settings?.forEach((s: any) => (map[s.key] = s.value));
+
+  // Prefer Lipila if enabled
+  if (map.gateway_lipila_enabled === "true" && map.lipila_api_key) {
+    return { gateway: "lipila", credentials: { api_key: map.lipila_api_key } };
+  }
+
+  // Fallback to MoneyUnify
+  if (map.gateway_moneyunify_enabled !== "false") {
+    const authId = map.moneyunify_auth_id || Deno.env.get("MONEYUNIFY_AUTH_ID") || "";
+    if (authId) {
+      return { gateway: "moneyunify", credentials: { auth_id: authId } };
+    }
+  }
+
+  return { gateway: "none", credentials: {} };
+}
+
+async function processWithMoneyUnify(phone: string, amount: number, authId: string) {
+  const formattedPhone = formatPhoneLocal(phone);
+  const body = new URLSearchParams({
+    from_payer: formattedPhone,
+    amount: String(amount),
+    auth_id: authId,
+  });
+
+  console.log("Calling MoneyUnify Request to Pay:", { phone: formattedPhone, amount });
+
+  const response = await fetch(MONEYUNIFY_API, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded", "Accept": "application/json" },
+    body: body.toString(),
+  });
+
+  const data = await response.json();
+  console.log("MoneyUnify response:", JSON.stringify(data));
+
+  if (data.isError) {
+    return { success: false, error: data.message || "Payment request failed" };
+  }
+
+  return {
+    success: true,
+    transaction_id: data.data?.transaction_id,
+    status: data.data?.status,
+  };
+}
+
+async function processWithLipila(phone: string, amount: number, apiKey: string, reference: string) {
+  const formattedPhone = formatPhoneInternational(phone);
+
+  const body = {
+    referenceId: reference,
+    amount: amount,
+    narration: "Payment collection",
+    accountNumber: formattedPhone,
+    currency: "ZMW",
+  };
+
+  console.log("Calling Lipila MoMo Collection:", { phone: formattedPhone, amount });
+
+  const response = await fetch(LIPILA_API, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      "x-api-key": apiKey,
+    },
+    body: JSON.stringify(body),
+  });
+
+  const data = await response.json();
+  console.log("Lipila response:", JSON.stringify(data));
+
+  if (data.status === "Failed" || response.status >= 400) {
+    return { success: false, error: data.message || "Payment request failed" };
+  }
+
+  return {
+    success: true,
+    transaction_id: data.identifier || data.referenceId,
+    status: data.status || "Pending",
+  };
 }
 
 Deno.serve(async (req: Request) => {
@@ -88,11 +192,20 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // Determine active gateway
+    const { gateway, credentials } = await getActiveGateway(supabase);
+    if (gateway === "none") {
+      return new Response(JSON.stringify({ error: "No payment gateway configured. Set API keys in admin settings." }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const merchantId = merchantData;
     const fee = calculateFee(amount);
     const reference = generateRef();
 
-    // Create pending transaction in DB
+    // Create pending transaction
     const { data: txData, error: insertError } = await supabase
       .from("transactions")
       .insert({
@@ -115,78 +228,36 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Get MoneyUnify auth_id: prefer app_settings, fallback to env
-    let authId: string | null = null;
-    const { data: settingData } = await supabase
-      .from("app_settings")
-      .select("value")
-      .eq("key", "moneyunify_auth_id")
-      .single();
-    if (settingData?.value) {
-      authId = settingData.value;
-    }
-    if (!authId) {
-      authId = Deno.env.get("MONEYUNIFY_AUTH_ID") || null;
-    }
-    if (!authId) {
-      return new Response(JSON.stringify({ error: "Payment gateway not configured. Set API key in admin settings." }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    // Process via active gateway
+    let result;
+    if (gateway === "lipila") {
+      result = await processWithLipila(phone, amount, credentials.api_key, reference);
+    } else {
+      result = await processWithMoneyUnify(phone, amount, credentials.auth_id, );
     }
 
-    const formattedPhone = formatPhone(phone);
-    const body = new URLSearchParams({
-      from_payer: formattedPhone,
-      amount: String(amount),
-      auth_id: authId,
-    });
-
-    console.log("Calling MoneyUnify Request to Pay:", { phone: formattedPhone, amount, provider });
-
-    const muResponse = await fetch(MONEYUNIFY_API, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Accept": "application/json",
-      },
-      body: body.toString(),
-    });
-
-    const muData = await muResponse.json();
-    console.log("MoneyUnify response:", JSON.stringify(muData));
-
-    if (muData.isError) {
-      // Update transaction to failed
-      await supabase
-        .from("transactions")
-        .update({ status: "failed" })
-        .eq("id", txData.id);
-
+    if (!result.success) {
+      await supabase.from("transactions").update({ status: "failed" }).eq("id", txData.id);
       return new Response(JSON.stringify({
         transaction: { ...txData, status: "failed" },
         success: false,
-        error: muData.message || "Payment request failed",
+        error: result.error,
       }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Payment initiated — status will be "initiated" or "otp-pending"
-    // Store the MoneyUnify transaction_id in the reference field for verification
-    const muTransactionId = muData.data?.transaction_id;
-
-    await supabase
-      .from("transactions")
-      .update({ reference: muTransactionId || reference })
-      .eq("id", txData.id);
+    // Update reference with gateway transaction ID
+    const gatewayTxId = result.transaction_id;
+    await supabase.from("transactions").update({ reference: gatewayTxId || reference }).eq("id", txData.id);
 
     return new Response(JSON.stringify({
-      transaction: { ...txData, reference: muTransactionId || reference },
+      transaction: { ...txData, reference: gatewayTxId || reference },
       success: true,
-      moneyunify_status: muData.data?.status,
-      transaction_id: muTransactionId,
+      moneyunify_status: result.status,
+      transaction_id: gatewayTxId,
+      gateway,
     }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
