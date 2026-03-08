@@ -9,7 +9,7 @@ import WithdrawalScreen from "@/components/pos/WithdrawalScreen";
 import SettingsScreen from "@/components/pos/SettingsScreen";
 import AuthScreen from "@/components/pos/AuthScreen";
 import { useAuth } from "@/hooks/useAuth";
-import { Provider, Transaction, processPayment, getTransactions } from "@/lib/api";
+import { Provider, Transaction, processPayment, getTransactions, detectProvider } from "@/lib/api";
 import { toast } from "sonner";
 
 type SaleFlow = "idle" | "new" | "ussd" | "receipt";
@@ -96,11 +96,21 @@ const Index = () => {
     setAmount(0);
   };
 
+  const handleRepeatSale = (repeatPhone: string, repeatAmount: number) => {
+    const detected = detectProvider(repeatPhone);
+    setPhone(repeatPhone);
+    setAmount(repeatAmount);
+    if (detected) setProvider(detected);
+    setSaleFlow("new");
+  };
+
   const handleGoHome = () => {
     setSaleFlow("idle");
     setTab("home");
     setTransaction(null);
   };
+
+  const pendingCount = transactions.filter(t => t.status === "pending").length;
 
   const navigateTab = (t: Tab) => {
     if (t === "sale") {
@@ -144,7 +154,12 @@ const Index = () => {
     <ATMFrame>
       <div className={`flex flex-col min-h-[480px] ${showBottomNav ? "pb-12" : ""}`}>
         {saleFlow === "new" && (
-          <NewSale onStartPayment={handleStartPayment} onCancel={handleGoHome} />
+          <NewSale
+            onStartPayment={handleStartPayment}
+            onCancel={handleGoHome}
+            initialPhone={phone}
+            initialAmount={amount}
+          />
         )}
         {saleFlow === "ussd" && (
           <UssdPushScreen
@@ -162,7 +177,7 @@ const Index = () => {
         )}
 
         {saleFlow === "idle" && tab === "home" && (
-          <Dashboard transactions={transactions} onNewSale={handleNewSale} />
+          <Dashboard transactions={transactions} onNewSale={handleNewSale} onRepeatSale={handleRepeatSale} />
         )}
         {saleFlow === "idle" && tab === "history" && (
           <TransactionHistory transactions={transactions} />
@@ -176,7 +191,7 @@ const Index = () => {
 
         {showBottomNav && (
           <div className="absolute bottom-0 left-0 right-0">
-            <BottomNav active={tab} onNavigate={navigateTab} />
+            <BottomNav active={tab} onNavigate={navigateTab} pendingCount={pendingCount} />
           </div>
         )}
       </div>

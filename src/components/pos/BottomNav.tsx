@@ -6,6 +6,7 @@ export type Tab = "home" | "sale" | "history" | "wallet" | "settings";
 interface BottomNavProps {
   active: Tab;
   onNavigate: (tab: Tab) => void;
+  pendingCount?: number;
 }
 
 const tabs: { id: Tab; label: string; icon: typeof Home }[] = [
@@ -16,18 +17,19 @@ const tabs: { id: Tab; label: string; icon: typeof Home }[] = [
   { id: "settings", label: "Settings", icon: Settings },
 ];
 
-const BottomNav = ({ active, onNavigate }: BottomNavProps) => {
+const BottomNav = ({ active, onNavigate, pendingCount = 0 }: BottomNavProps) => {
   return (
     <nav className="bg-muted border-t border-border px-2">
       <div className="flex justify-around">
         {tabs.map((tab) => {
           const isActive = active === tab.id;
+          const showBadge = tab.id === "history" && pendingCount > 0;
           return (
             <button
               key={tab.id}
               onClick={() => onNavigate(tab.id)}
               className={cn(
-                "flex flex-col items-center gap-0.5 py-2 px-3 text-[10px] transition-colors font-mono",
+                "relative flex flex-col items-center gap-0.5 py-2 px-3 text-[10px] transition-colors font-mono",
                 isActive
                   ? "text-primary text-glow"
                   : "text-muted-foreground hover:text-foreground"
@@ -35,6 +37,11 @@ const BottomNav = ({ active, onNavigate }: BottomNavProps) => {
             >
               <tab.icon className={cn("w-4 h-4", tab.id === "sale" && "w-5 h-5")} />
               <span className="font-medium uppercase tracking-wider">{tab.label}</span>
+              {showBadge && (
+                <span className="absolute -top-0.5 right-1 w-4 h-4 bg-destructive text-destructive-foreground rounded-full text-[8px] font-bold flex items-center justify-center animate-pulse">
+                  {pendingCount > 9 ? "9+" : pendingCount}
+                </span>
+              )}
             </button>
           );
         })}

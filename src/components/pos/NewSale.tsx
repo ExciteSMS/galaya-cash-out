@@ -7,6 +7,8 @@ type SaleStep = "amount" | "phone" | "provider" | "confirm";
 interface NewSaleProps {
   onStartPayment: (provider: Provider, phone: string, amount: number) => void;
   onCancel: () => void;
+  initialPhone?: string;
+  initialAmount?: number;
 }
 
 const PROVIDERS: { id: Provider; name: string; color: string }[] = [
@@ -15,11 +17,11 @@ const PROVIDERS: { id: Provider; name: string; color: string }[] = [
   { id: "Airtel", name: "Airtel Money", color: "bg-airtel" },
 ];
 
-const NewSale = ({ onStartPayment, onCancel }: NewSaleProps) => {
-  const [step, setStep] = useState<SaleStep>("amount");
-  const [amountStr, setAmountStr] = useState("");
-  const [phone, setPhone] = useState("");
-  const [provider, setProvider] = useState<Provider | null>(null);
+const NewSale = ({ onStartPayment, onCancel, initialPhone = "", initialAmount = 0 }: NewSaleProps) => {
+  const [step, setStep] = useState<SaleStep>(initialAmount > 0 ? "phone" : "amount");
+  const [amountStr, setAmountStr] = useState(initialAmount > 0 ? String(initialAmount) : "");
+  const [phone, setPhone] = useState(initialPhone);
+  const [provider, setProvider] = useState<Provider | null>(() => initialPhone ? detectProvider(initialPhone) : null);
   const [accountName, setAccountName] = useState<string | null>(null);
   const [lookingUp, setLookingUp] = useState(false);
 
