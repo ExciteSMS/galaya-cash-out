@@ -234,6 +234,89 @@ export default function AdminSettings() {
         </CardContent>
       </Card>
 
+      {/* SMS Notifications */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5 text-primary" />
+            SMS Notifications (Excite SMS)
+          </CardTitle>
+          <CardDescription>Send payment confirmations to merchants and customers via SMS</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold text-foreground text-sm">Enable SMS Notifications</h3>
+              <p className="text-xs text-muted-foreground">Send SMS on successful payments</p>
+            </div>
+            <Switch
+              checked={settings.sms_enabled === "true"}
+              onCheckedChange={(checked) => handleToggle("sms_enabled", checked)}
+            />
+          </div>
+
+          {settings.sms_enabled === "true" && (
+            <div className="space-y-4 pt-2">
+              <div>
+                <Label htmlFor="sms-key">Excite SMS API Key</Label>
+                <div className="relative mt-1">
+                  <Input
+                    id="sms-key"
+                    type={showSmsKey ? "text" : "password"}
+                    value={settings.excite_sms_api_key || ""}
+                    onChange={(e) => handleChange("excite_sms_api_key", e.target.value)}
+                    placeholder="1|KpE6dAGE94RT..."
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowSmsKey(!showSmsKey)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showSmsKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Get this from gateway.excitesms.com</p>
+              </div>
+
+              <div>
+                <Label htmlFor="sms-sender">Sender ID</Label>
+                <Input
+                  id="sms-sender"
+                  value={settings.excite_sms_sender_id || ""}
+                  onChange={(e) => handleChange("excite_sms_sender_id", e.target.value)}
+                  placeholder="Galaya"
+                  className="mt-1"
+                />
+                <p className="text-xs text-muted-foreground mt-1">Name that appears as the SMS sender (max 11 chars)</p>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-foreground">Notify Merchant</p>
+                  <p className="text-xs text-muted-foreground">SMS to merchant on each sale</p>
+                </div>
+                <Switch
+                  checked={settings.sms_notify_merchant !== "false"}
+                  onCheckedChange={(checked) => handleToggle("sms_notify_merchant", checked)}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-foreground">Notify Customer</p>
+                  <p className="text-xs text-muted-foreground">SMS receipt to paying customer</p>
+                </div>
+                <Switch
+                  checked={settings.sms_notify_customer !== "false"}
+                  onCheckedChange={(checked) => handleToggle("sms_notify_customer", checked)}
+                />
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto">
         <Save className="h-4 w-4 mr-2" />
         {saving ? "Saving..." : "Save All Settings"}
