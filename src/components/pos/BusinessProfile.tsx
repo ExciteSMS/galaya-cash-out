@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, Store, Save } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { getTransactions, Transaction } from "@/lib/api";
+import MerchantTierBadge from "./MerchantTierBadge";
 
 interface BusinessProfileProps {
   onBack: () => void;
@@ -15,6 +17,11 @@ const BusinessProfile = ({ onBack }: BusinessProfileProps) => {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+
+  useEffect(() => {
+    getTransactions().then(setTransactions).catch(console.error);
+  }, []);
 
   const handleSave = async () => {
     if (!name.trim()) {
@@ -49,6 +56,9 @@ const BusinessProfile = ({ onBack }: BusinessProfileProps) => {
           <h2 className="font-display font-bold text-lg text-foreground">Business Profile</h2>
         </div>
       </div>
+
+      {/* Merchant Tier */}
+      <MerchantTierBadge transactions={transactions} />
 
       <div className="flex flex-col gap-4">
         <div>

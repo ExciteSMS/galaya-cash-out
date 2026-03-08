@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { ArrowUpRight, TrendingUp, TrendingDown, Wallet, Hash, Calendar, BarChart3, Repeat, Star } from "lucide-react";
-import MerchantTierBadge from "./MerchantTierBadge";
 import { Transaction } from "@/lib/api";
 import { subDays, startOfDay, eachDayOfInterval, format } from "date-fns";
 
@@ -97,9 +96,6 @@ const Dashboard = ({ transactions, onNewSale, onRepeatSale }: DashboardProps) =>
         </div>
         <ArrowUpRight className="w-6 h-6 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
       </button>
-
-      {/* Merchant Tier Badge */}
-      <MerchantTierBadge transactions={transactions} />
 
       {/* Today's Stats with comparison */}
       <div>
