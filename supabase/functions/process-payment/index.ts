@@ -233,11 +233,32 @@ Deno.serve(async (req: Request) => {
     if (gateway === "lipila") {
       result = await processWithLipila(phone, amount, credentials.api_key, reference);
     } else {
-      result = await processWithMoneyUnify(phone, amount, credentials.auth_id, );
+      result = await processWithMoneyUnify(phone, amount, credentials.auth_id);
     }
 
     if (!result.success) {
       await supabase.from("transactions").update({ status: "failed" }).eq("id", txData.id);
+    }
+
+    // Run fraud detection asynchronously (fire and forget)
+    try {
+      const fraudClient = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      );
+      fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/check-fraud`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        },
+        body: JSON.stringify({ merchant_id: merchantId, transaction_id: txData.id, phone, amount }),
+      }).catch(e => console.error("Fraud check fire-and-forget error:", e));
+    } catch (e) {
+      console.error("Fraud check setup error:", e);
+    }
+
+    if (!result.success) {
       return new Response(JSON.stringify({
         transaction: { ...txData, status: "failed" },
         success: false,

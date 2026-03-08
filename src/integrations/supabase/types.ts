@@ -119,6 +119,60 @@ export type Database = {
           },
         ]
       }
+      fraud_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          description: string
+          id: string
+          merchant_id: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          status: string
+          transaction_id: string | null
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          description: string
+          id?: string
+          merchant_id?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          status?: string
+          transaction_id?: string | null
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          description?: string
+          id?: string
+          merchant_id?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          status?: string
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fraud_alerts_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fraud_alerts_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       merchant_payout_accounts: {
         Row: {
           account_name: string | null
@@ -157,6 +211,33 @@ export type Database = {
           },
         ]
       }
+      merchant_tiers: {
+        Row: {
+          commission_rate: number
+          created_at: string
+          id: string
+          min_monthly_volume: number
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          commission_rate?: number
+          created_at?: string
+          id?: string
+          min_monthly_volume?: number
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          commission_rate?: number
+          created_at?: string
+          id?: string
+          min_monthly_volume?: number
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       merchants: {
         Row: {
           address: string | null
@@ -167,6 +248,7 @@ export type Database = {
           notification_transactions: boolean | null
           phone_number: string
           status: string
+          tier_id: string | null
           user_id: string
         }
         Insert: {
@@ -178,6 +260,7 @@ export type Database = {
           notification_transactions?: boolean | null
           phone_number: string
           status?: string
+          tier_id?: string | null
           user_id: string
         }
         Update: {
@@ -189,9 +272,69 @@ export type Database = {
           notification_transactions?: boolean | null
           phone_number?: string
           status?: string
+          tier_id?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "merchants_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "merchant_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      refunds: {
+        Row: {
+          amount: number
+          approved_by: string | null
+          created_at: string
+          id: string
+          merchant_id: string
+          reason: string
+          status: string
+          transaction_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          approved_by?: string | null
+          created_at?: string
+          id?: string
+          merchant_id: string
+          reason?: string
+          status?: string
+          transaction_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          approved_by?: string | null
+          created_at?: string
+          id?: string
+          merchant_id?: string
+          reason?: string
+          status?: string
+          transaction_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refunds_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       transactions: {
         Row: {

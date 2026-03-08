@@ -1,7 +1,8 @@
 import { Transaction } from "@/lib/api";
-import { Search, Download, FileText } from "lucide-react";
+import { Search, Download, FileText, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import RefundRequest from "./RefundRequest";
 
 interface TransactionHistoryProps {
   transactions: Transaction[];
@@ -79,6 +80,11 @@ function exportPDF(transactions: Transaction[]) {
 const TransactionHistory = ({ transactions }: TransactionHistoryProps) => {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "success" | "failed">("all");
+  const [refundTx, setRefundTx] = useState<Transaction | null>(null);
+
+  if (refundTx) {
+    return <RefundRequest transaction={refundTx} onBack={() => setRefundTx(null)} onSuccess={() => setRefundTx(null)} />;
+  }
 
   const filtered = transactions.filter((tx) => {
     if (filter !== "all" && tx.status !== filter) return false;
@@ -163,18 +169,28 @@ const TransactionHistory = ({ transactions }: TransactionHistoryProps) => {
                 <p className="text-[10px] text-muted-foreground font-mono">{tx.reference}</p>
               </div>
             </div>
-            <div className="text-right">
+            <div className="text-right flex flex-col items-end gap-0.5">
               <p className="text-sm font-semibold text-foreground">K{tx.amount.toLocaleString()}</p>
               <p className="text-[10px] text-muted-foreground">-K{tx.fee} fee</p>
               <span
                 className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
                   tx.status === "success"
                     ? "bg-success/10 text-success"
+                    : tx.status === "refunded"
+                    ? "bg-primary/10 text-primary"
                     : "bg-destructive/10 text-destructive"
                 }`}
               >
                 {tx.status}
               </span>
+              {tx.status === "success" && (
+                <button
+                  onClick={() => setRefundTx(tx)}
+                  className="text-[10px] text-muted-foreground hover:text-primary flex items-center gap-0.5 mt-0.5"
+                >
+                  <RotateCcw className="w-3 h-3" /> Refund
+                </button>
+              )}
             </div>
           </div>
         ))}
