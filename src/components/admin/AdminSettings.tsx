@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getSettings, updateSetting, upsertSetting } from "@/lib/adminApi";
+import { getSettings, updateSetting, upsertSetting, logAudit } from "@/lib/adminApi";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -47,6 +47,7 @@ export default function AdminSettings() {
         upsertSetting(key, value)
       );
       await Promise.all(promises);
+      await logAudit("settings_updated", "app_settings", undefined, { keys: Object.keys(settings) });
       toast.success("Settings saved successfully");
     } catch (err: any) {
       toast.error(err.message || "Failed to save settings");

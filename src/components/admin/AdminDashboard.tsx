@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { getAllTransactions, getAllMerchants, getAllDisbursements } from "@/lib/adminApi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, Users, TrendingUp, Activity, ArrowDownToLine, Percent, Calendar } from "lucide-react";
-import { format, subDays, startOfDay } from "date-fns";
+import { format, subDays, startOfDay, eachDayOfInterval } from "date-fns";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -18,6 +19,7 @@ export default function AdminDashboard() {
     weekRevenue: 0,
   });
   const [recentTxs, setRecentTxs] = useState<any[]>([]);
+  const [allTxs, setAllTxs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,13 +27,12 @@ export default function AdminDashboard() {
       const successful = txs.filter((t: any) => t.status === "success");
       const today = startOfDay(new Date());
       const weekAgo = subDays(today, 7);
-      
+
       const todayTxs = successful.filter((t: any) => new Date(t.created_at) >= today);
       const weekTxs = successful.filter((t: any) => new Date(t.created_at) >= weekAgo);
-      
+
       const successDisbs = disbs.filter((d: any) => d.status === "success");
       const totalDisbursed = successDisbs.reduce((s: number, d: any) => s + Number(d.amount), 0);
-      // Estimate platform fee earned (total fee - gateway portion)
       const totalDisbFees = successDisbs.reduce((s: number, d: any) => s + Number(d.fee), 0);
 
       setStats({
@@ -46,10 +47,29 @@ export default function AdminDashboard() {
         todayTxCount: todayTxs.length,
         weekRevenue: weekTxs.reduce((s: number, t: any) => s + t.amount, 0),
       });
+      setAllTxs(txs);
       setRecentTxs(txs.slice(0, 8));
       setLoading(false);
     });
   }, []);
+
+  // Chart data: daily revenue for last 14 days
+  const chartData = useMemo(() => {
+    const end = new Date();
+    const start = subDays(end, 13);
+    const days = eachDayOfInterval({ start, end });
+    return days.map(day => {
+      const dayStart = startOfDay(day);
+      const dayEnd = new Date(dayStart.getTime() + 86400000);
+      const dayTxs = allTxs.filter(t => t.status === "success" && new Date(t.created_at) >= dayStart && new Date(t.created_at) < dayEnd);
+      return {
+        date: format(day, "dd MMM"),
+        revenue: dayTxs.reduce((s, t) => s + t.amount, 0),
+        fees: dayTxs.reduce((s, t) => s + t.fee, 0),
+        count: dayTxs.length,
+      };
+    });
+  }, [allTxs]);
 
   const cards = [
     { label: "Total Volume", value: `K${stats.totalRevenue.toLocaleString()}`, icon: DollarSign, color: "text-primary" },
@@ -69,7 +89,7 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold font-display">Admin Dashboard</h1>
-      
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map((c) => (
           <Card key={c.label}>
@@ -84,6 +104,30 @@ export default function AdminDashboard() {
         ))}
       </div>
 
+      {/* Revenue Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">14-Day Revenue Trend</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <XAxis dataKey="date" tick={{ fontSize: 10 }} className="text-muted-foreground" />
+                <YAxis tick={{ fontSize: 10 }} className="text-muted-foreground" />
+                <Tooltip
+                  contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+                  formatter={(value: number, name: string) => [`K${value.toLocaleString()}`, name === "revenue" ? "Revenue" : "Fees"]}
+                />
+                <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="fees" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
@@ -92,10 +136,7 @@ export default function AdminDashboard() {
           <CardContent>
             <div className="flex items-center gap-3">
               <div className="flex-1 h-3 bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary rounded-full transition-all"
-                  style={{ width: `${stats.successRate}%` }}
-                />
+                <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${stats.successRate}%` }} />
               </div>
               <span className="text-sm font-bold">{stats.successRate}%</span>
             </div>

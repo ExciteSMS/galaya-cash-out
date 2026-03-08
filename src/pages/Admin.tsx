@@ -7,15 +7,17 @@ import AdminTransactions from "@/components/admin/AdminTransactions";
 import AdminMerchants from "@/components/admin/AdminMerchants";
 import AdminDisbursements from "@/components/admin/AdminDisbursements";
 import AdminSettings from "@/components/admin/AdminSettings";
-import { LayoutDashboard, ArrowLeftRight, Users, Settings, LogOut, Shield, ArrowDownToLine } from "lucide-react";
+import AdminAuditLog from "@/components/admin/AdminAuditLog";
+import { LayoutDashboard, ArrowLeftRight, Users, Settings, LogOut, Shield, ArrowDownToLine, ScrollText } from "lucide-react";
 
-type AdminTab = "dashboard" | "transactions" | "merchants" | "disbursements" | "settings";
+type AdminTab = "dashboard" | "transactions" | "merchants" | "disbursements" | "audit" | "settings";
 
 const navItems: { tab: AdminTab; label: string; icon: React.ElementType }[] = [
   { tab: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { tab: "transactions", label: "Transactions", icon: ArrowLeftRight },
   { tab: "merchants", label: "Merchants", icon: Users },
   { tab: "disbursements", label: "Disbursements", icon: ArrowDownToLine },
+  { tab: "audit", label: "Audit Log", icon: ScrollText },
   { tab: "settings", label: "Settings", icon: Settings },
 ];
 
@@ -81,6 +83,7 @@ export default function Admin() {
         {activeTab === "transactions" && <AdminTransactions />}
         {activeTab === "merchants" && <AdminMerchants />}
         {activeTab === "disbursements" && <AdminDisbursements />}
+        {activeTab === "audit" && <AdminAuditLog />}
         {activeTab === "settings" && <AdminSettings />}
       </main>
     </div>
