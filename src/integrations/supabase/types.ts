@@ -121,6 +121,7 @@ export type Database = {
       }
       merchant_payout_accounts: {
         Row: {
+          account_name: string | null
           created_at: string
           id: string
           is_default: boolean
@@ -129,6 +130,7 @@ export type Database = {
           provider: string
         }
         Insert: {
+          account_name?: string | null
           created_at?: string
           id?: string
           is_default?: boolean
@@ -137,6 +139,7 @@ export type Database = {
           provider: string
         }
         Update: {
+          account_name?: string | null
           created_at?: string
           id?: string
           is_default?: boolean

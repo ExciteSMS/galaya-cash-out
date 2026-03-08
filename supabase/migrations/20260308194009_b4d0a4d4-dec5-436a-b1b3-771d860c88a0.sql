@@ -1,0 +1,1 @@
+ALTER TABLE public.merchant_payout_accounts ADD COLUMN account_name text;

@@ -84,7 +84,8 @@ const PayoutAccounts = ({ onBack }: PayoutAccountsProps) => {
       provider: newProvider,
       phone_number: newPhone,
       is_default: isDefault,
-    });
+      account_name: verifiedName,
+    } as any);
     if (error) {
       toast.error("Failed to add account");
       return;
@@ -150,6 +151,7 @@ const PayoutAccounts = ({ onBack }: PayoutAccountsProps) => {
                 <div className="flex-1">
                   <p className="text-sm font-medium text-foreground">{acc.provider} Money</p>
                   <p className="text-xs text-muted-foreground">{acc.phone_number}</p>
+                  {acc.account_name && <p className="text-[10px] text-primary">{acc.account_name}</p>}
                 </div>
                 <div className="flex items-center gap-2">
                   {acc.is_default ? (
