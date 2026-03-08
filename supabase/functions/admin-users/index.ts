@@ -15,12 +15,10 @@ Deno.serve(async (req: Request) => {
     const authHeader = req.headers.get("authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Verify the caller is an admin
     const anonClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
@@ -31,38 +29,31 @@ Deno.serve(async (req: Request) => {
     const { data: { user }, error: userError } = await anonClient.auth.getUser(token);
     if (userError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Check admin role
     const adminClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const { data: roleData } = await adminClient
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .eq("role", "admin")
-      .single();
+    const { data: roleCheck } = await adminClient
+      .from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
 
-    if (!roleData) {
+    if (!roleCheck) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { action } = await req.json();
+    const body = await req.json();
+    const { action } = body;
 
     if (action === "list_users") {
       const { data: { users }, error } = await adminClient.auth.admin.listUsers({ perPage: 500 });
       if (error) throw error;
 
-      // Get all roles
       const { data: roles } = await adminClient.from("user_roles").select("*");
       const roleMap: Record<string, string[]> = {};
       roles?.forEach((r: any) => {
@@ -70,7 +61,6 @@ Deno.serve(async (req: Request) => {
         roleMap[r.user_id].push(r.role);
       });
 
-      // Get merchant info
       const { data: merchants } = await adminClient.from("merchants").select("user_id, name, phone_number");
       const merchantMap: Record<string, any> = {};
       merchants?.forEach((m: any) => { merchantMap[m.user_id] = m; });
@@ -90,21 +80,72 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "assign_role") {
-      const { target_user_id, role } = await req.json().catch(() => ({}));
-      // Re-parse since we already consumed body
+      const { target_user_id, role } = body;
+      if (!target_user_id || !role) {
+        return new Response(JSON.stringify({ error: "Missing target_user_id or role" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { error } = await adminClient.from("user_roles").upsert(
+        { user_id: target_user_id, role },
+        { onConflict: "user_id,role" }
+      );
+      if (error) throw error;
+
+      // Audit log
+      await adminClient.from("admin_audit_log").insert({
+        admin_user_id: user.id,
+        action: "role_assigned",
+        target_type: "user",
+        target_id: target_user_id,
+        details: { role },
+      });
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    // For assign/remove role, re-read from a different approach
-    // We need to handle this in the initial parse
+    if (action === "remove_role") {
+      const { target_user_id, role } = body;
+      if (!target_user_id || !role) {
+        return new Response(JSON.stringify({ error: "Missing target_user_id or role" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Prevent removing own admin role
+      if (target_user_id === user.id && role === "admin") {
+        return new Response(JSON.stringify({ error: "Cannot remove your own admin role" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { error } = await adminClient.from("user_roles").delete()
+        .eq("user_id", target_user_id).eq("role", role);
+      if (error) throw error;
+
+      await adminClient.from("admin_audit_log").insert({
+        admin_user_id: user.id,
+        action: "role_removed",
+        target_type: "user",
+        target_id: target_user_id,
+        details: { role },
+      });
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({ error: "Unknown action" }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
     console.error("Admin users error:", err);
     return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
