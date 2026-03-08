@@ -123,20 +123,11 @@ const Index = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <div className="bg-muted rounded-t-lg border border-border p-3 flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span className="font-display text-xs text-primary tracking-[0.3em] uppercase text-glow">
-              Galaya Payment Terminal
-            </span>
-          </div>
-          <div className="relative bg-card border-x border-border min-h-[480px] flex items-center justify-center atm-scanline atm-vignette atm-screen">
-            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          </div>
-          <ATMBezelBottom />
+      <ATMFrame>
+        <div className="flex-1 flex items-center justify-center min-h-[200px]">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
-      </div>
+      </ATMFrame>
     );
   }
 
