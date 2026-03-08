@@ -9,7 +9,7 @@ import WithdrawalScreen from "@/components/pos/WithdrawalScreen";
 import SettingsScreen from "@/components/pos/SettingsScreen";
 import AuthScreen from "@/components/pos/AuthScreen";
 import { useAuth } from "@/hooks/useAuth";
-import { Provider, Transaction, processPayment, getTransactions } from "@/lib/api";
+import { Provider, Transaction, processPayment, getTransactions, detectProvider } from "@/lib/api";
 import { toast } from "sonner";
 
 type SaleFlow = "idle" | "new" | "ussd" | "receipt";
