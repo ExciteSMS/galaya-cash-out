@@ -172,7 +172,7 @@ const Index = () => {
         )}
 
         {saleFlow === "idle" && tab === "home" && (
-          <Dashboard transactions={transactions} onNewSale={handleNewSale} />
+          <Dashboard transactions={transactions} onNewSale={handleNewSale} onRepeatSale={handleRepeatSale} />
         )}
         {saleFlow === "idle" && tab === "history" && (
           <TransactionHistory transactions={transactions} />
