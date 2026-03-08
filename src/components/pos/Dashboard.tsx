@@ -16,6 +16,7 @@ interface DashboardProps {
 
 const Dashboard = ({ transactions, onNewSale, onRepeatSale }: DashboardProps) => {
   const { merchant } = useAuth();
+  const features = useFeatureFlags();
   const today = new Date().toDateString();
   const yesterday = subDays(new Date(), 1).toDateString();
   const successTxs = transactions.filter((t) => t.status === "success");
