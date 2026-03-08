@@ -1,26 +1,39 @@
 import { useState } from "react";
-import { Store, CreditCard, Bell, HelpCircle, LogOut, Wallet, ArrowDownToLine } from "lucide-react";
+import { Store, CreditCard, Bell, HelpCircle, LogOut, Wallet, Receipt, Target } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import BusinessProfile from "./BusinessProfile";
 import PaymentSettings from "./PaymentSettings";
 import NotificationSettings from "./NotificationSettings";
 import HelpSupport from "./HelpSupport";
 import PayoutAccounts from "./PayoutAccounts";
+import ExpenseTracker from "./ExpenseTracker";
+import SalesGoalSettings from "./SalesGoalSettings";
+import { getTransactions, Transaction } from "@/lib/api";
+import { useEffect } from "react";
 
-type SettingsView = "main" | "profile" | "payments" | "notifications" | "help" | "payout";
+type SettingsView = "main" | "profile" | "payments" | "notifications" | "help" | "payout" | "expenses" | "goal";
 
 const SettingsScreen = () => {
   const { merchant, logout } = useAuth();
   const [view, setView] = useState<SettingsView>("main");
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+
+  useEffect(() => {
+    getTransactions().then(setTransactions).catch(console.error);
+  }, []);
 
   if (view === "profile") return <BusinessProfile onBack={() => setView("main")} />;
   if (view === "payments") return <PaymentSettings onBack={() => setView("main")} />;
   if (view === "notifications") return <NotificationSettings onBack={() => setView("main")} />;
   if (view === "help") return <HelpSupport onBack={() => setView("main")} />;
   if (view === "payout") return <PayoutAccounts onBack={() => setView("main")} />;
+  if (view === "expenses") return <ExpenseTracker onBack={() => setView("main")} transactions={transactions} />;
+  if (view === "goal") return <SalesGoalSettings onBack={() => setView("main")} />;
 
   const items = [
-    { icon: Store, label: "Business Profile", desc: "Store name, address", key: "profile" as const },
+    { icon: Store, label: "Business Profile", desc: "Store name, address, tier", key: "profile" as const },
+    { icon: Target, label: "Daily Sales Goal", desc: "Set your daily target", key: "goal" as const },
+    { icon: Receipt, label: "Expenses", desc: "Track costs & profit/loss", key: "expenses" as const },
     { icon: CreditCard, label: "Payment Settings", desc: "Mobile money providers", key: "payments" as const },
     { icon: Wallet, label: "Payout Accounts", desc: "Where you receive earnings", key: "payout" as const },
     { icon: Bell, label: "Notifications", desc: "Transaction alerts", key: "notifications" as const },
