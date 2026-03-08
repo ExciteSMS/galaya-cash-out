@@ -84,7 +84,8 @@ const PayoutAccounts = ({ onBack }: PayoutAccountsProps) => {
       provider: newProvider,
       phone_number: newPhone,
       is_default: isDefault,
-    });
+      account_name: verifiedName,
+    } as any);
     if (error) {
       toast.error("Failed to add account");
       return;
