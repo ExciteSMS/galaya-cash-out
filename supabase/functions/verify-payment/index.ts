@@ -137,6 +137,35 @@ Deno.serve(async (req: Request) => {
     if (db_transaction_id && (isSuccess || isFailed)) {
       const dbStatus = isSuccess ? "success" : "failed";
       await supabase.from("transactions").update({ status: dbStatus }).eq("id", db_transaction_id);
+
+      // Send SMS on success
+      if (isSuccess) {
+        try {
+          const { data: txRow } = await supabase
+            .from("transactions")
+            .select("*, merchants(name, phone_number)")
+            .eq("id", db_transaction_id)
+            .single();
+
+          if (txRow) {
+            const merchantInfo = txRow.merchants as any;
+            await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-sms`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                merchant_phone: merchantInfo?.phone_number,
+                merchant_name: merchantInfo?.name,
+                customer_phone: txRow.phone,
+                amount: txRow.amount,
+                reference: txRow.reference,
+                provider: txRow.provider,
+              }),
+            });
+          }
+        } catch (smsErr) {
+          console.error("SMS trigger error:", smsErr);
+        }
+      }
     }
 
     return new Response(JSON.stringify({

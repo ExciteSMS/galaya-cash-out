@@ -40,13 +40,36 @@ Deno.serve(async (req: Request) => {
 
     // Find and update transaction by reference
     const lookupRef = identifier || referenceId;
-    const { error } = await supabase
+    const { data: updatedRows, error } = await supabase
       .from("transactions")
       .update({ status: dbStatus })
-      .or(`reference.eq.${lookupRef},reference.eq.${referenceId}`);
+      .or(`reference.eq.${lookupRef},reference.eq.${referenceId}`)
+      .select("*, merchants(name, phone_number)");
 
     if (error) {
       console.error("Callback update error:", error);
+    }
+
+    // Send SMS on success
+    if (dbStatus === "success" && updatedRows && updatedRows.length > 0) {
+      try {
+        const tx = updatedRows[0];
+        const merchantInfo = tx.merchants as any;
+        await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-sms`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            merchant_phone: merchantInfo?.phone_number,
+            merchant_name: merchantInfo?.name,
+            customer_phone: tx.phone,
+            amount: tx.amount,
+            reference: tx.reference,
+            provider: tx.provider,
+          }),
+        });
+      } catch (smsErr) {
+        console.error("SMS trigger error:", smsErr);
+      }
     }
 
     return new Response(JSON.stringify({ received: true }), {
