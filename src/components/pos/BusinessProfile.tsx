@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, Store, Save } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { getTransactions, Transaction } from "@/lib/api";
+import MerchantTierBadge from "./MerchantTierBadge";
 
 interface BusinessProfileProps {
   onBack: () => void;
