@@ -119,6 +119,44 @@ export type Database = {
           },
         ]
       }
+      expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          description: string
+          expense_date: string
+          id: string
+          merchant_id: string
+        }
+        Insert: {
+          amount: number
+          category?: string
+          created_at?: string
+          description?: string
+          expense_date?: string
+          id?: string
+          merchant_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          description?: string
+          expense_date?: string
+          id?: string
+          merchant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fraud_alerts: {
         Row: {
           alert_type: string
@@ -241,7 +279,10 @@ export type Database = {
       merchants: {
         Row: {
           address: string | null
+          approval_note: string | null
+          approval_status: string
           created_at: string
+          daily_sales_goal: number | null
           id: string
           name: string
           notification_daily_summary: boolean | null
@@ -253,7 +294,10 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          approval_note?: string | null
+          approval_status?: string
           created_at?: string
+          daily_sales_goal?: number | null
           id?: string
           name?: string
           notification_daily_summary?: boolean | null
@@ -265,7 +309,10 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          approval_note?: string | null
+          approval_status?: string
           created_at?: string
+          daily_sales_goal?: number | null
           id?: string
           name?: string
           notification_daily_summary?: boolean | null
@@ -281,6 +328,44 @@ export type Database = {
             columns: ["tier_id"]
             isOneToOne: false
             referencedRelation: "merchant_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          merchant_id: string | null
+          message: string
+          read: boolean
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          merchant_id?: string | null
+          message: string
+          read?: boolean
+          title: string
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          merchant_id?: string | null
+          message?: string
+          read?: boolean
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
             referencedColumns: ["id"]
           },
         ]

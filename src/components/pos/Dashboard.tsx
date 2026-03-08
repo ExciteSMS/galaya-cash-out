@@ -1,7 +1,11 @@
 import { useMemo } from "react";
 import { ArrowUpRight, TrendingUp, TrendingDown, Wallet, Hash, Calendar, BarChart3, Repeat, Star } from "lucide-react";
 import { Transaction } from "@/lib/api";
-import { subDays, startOfDay, eachDayOfInterval, format } from "date-fns";
+import { subDays, eachDayOfInterval, format } from "date-fns";
+import SalesGoalRing from "./SalesGoalRing";
+import MerchantQRCode from "./MerchantQRCode";
+import NotificationCenter from "./NotificationCenter";
+import { useAuth } from "@/hooks/useAuth";
 
 interface DashboardProps {
   transactions: Transaction[];
@@ -10,6 +14,7 @@ interface DashboardProps {
 }
 
 const Dashboard = ({ transactions, onNewSale, onRepeatSale }: DashboardProps) => {
+  const { merchant } = useAuth();
   const today = new Date().toDateString();
   const yesterday = subDays(new Date(), 1).toDateString();
   const successTxs = transactions.filter((t) => t.status === "success");
@@ -29,23 +34,18 @@ const Dashboard = ({ transactions, onNewSale, onRepeatSale }: DashboardProps) =>
     ? Math.round(((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100)
     : todayRevenue > 0 ? 100 : 0;
 
-  // Weekly chart data
   const weekData = useMemo(() => {
     const end = new Date();
     const start = subDays(end, 6);
     return eachDayOfInterval({ start, end }).map(day => {
       const dayStr = day.toDateString();
       const dayTxs = successTxs.filter(t => new Date(t.created_at).toDateString() === dayStr);
-      return {
-        label: format(day, "EEE"),
-        amount: dayTxs.reduce((s, t) => s + t.amount, 0),
-      };
+      return { label: format(day, "EEE"), amount: dayTxs.reduce((s, t) => s + t.amount, 0) };
     });
   }, [successTxs]);
 
   const maxWeek = Math.max(...weekData.map(d => d.amount), 1);
 
-  // Frequent customers (top 3)
   const frequentCustomers = useMemo(() => {
     const counts: Record<string, { phone: string; count: number; lastAmount: number; provider: string }> = {};
     successTxs.forEach(tx => {
@@ -57,8 +57,8 @@ const Dashboard = ({ transactions, onNewSale, onRepeatSale }: DashboardProps) =>
     return Object.values(counts).sort((a, b) => b.count - a.count).slice(0, 3);
   }, [successTxs]);
 
-  // Pending transactions count
   const pendingCount = transactions.filter(t => t.status === "pending").length;
+  const dailyGoal = Number((merchant as any)?.daily_sales_goal) || 0;
 
   return (
     <div className="flex flex-col gap-3 p-4">
@@ -70,6 +70,7 @@ const Dashboard = ({ transactions, onNewSale, onRepeatSale }: DashboardProps) =>
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <NotificationCenter />
           {pendingCount > 0 && (
             <div className="relative">
               <div className="w-8 h-8 rounded border border-primary/50 flex items-center justify-center">
@@ -97,7 +98,10 @@ const Dashboard = ({ transactions, onNewSale, onRepeatSale }: DashboardProps) =>
         <ArrowUpRight className="w-6 h-6 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
       </button>
 
-      {/* Today's Stats with comparison */}
+      {/* Daily Sales Goal */}
+      <SalesGoalRing transactions={transactions} goal={dailyGoal} />
+
+      {/* Today's Stats */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
           <p className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold flex items-center gap-1">
@@ -129,6 +133,9 @@ const Dashboard = ({ transactions, onNewSale, onRepeatSale }: DashboardProps) =>
         </div>
       </div>
 
+      {/* QR Code */}
+      <MerchantQRCode />
+
       {/* Mini weekly chart */}
       <div className="bg-secondary rounded-lg border border-border p-3">
         <p className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold mb-2 flex items-center gap-1">
@@ -151,7 +158,7 @@ const Dashboard = ({ transactions, onNewSale, onRepeatSale }: DashboardProps) =>
         </div>
       </div>
 
-      {/* Frequent Customers / Quick Repeat */}
+      {/* Quick Repeat */}
       {frequentCustomers.length > 0 && onRepeatSale && (
         <div>
           <p className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 flex items-center gap-1">
@@ -212,16 +219,11 @@ const Dashboard = ({ transactions, onNewSale, onRepeatSale }: DashboardProps) =>
         </h2>
         <div className="flex flex-col gap-1.5">
           {transactions.slice(0, 5).map((tx) => (
-            <div
-              key={tx.id}
-              className="bg-secondary rounded-lg p-2.5 border border-border flex items-center justify-between"
-            >
+            <div key={tx.id} className="bg-secondary rounded-lg p-2.5 border border-border flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div
-                  className={`w-7 h-7 rounded flex items-center justify-center text-[10px] font-bold text-foreground border ${
-                    tx.provider === "MTN" ? "border-mtn text-mtn" : tx.provider === "Zamtel" ? "border-zamtel text-zamtel" : "border-airtel text-airtel"
-                  }`}
-                >
+                <div className={`w-7 h-7 rounded flex items-center justify-center text-[10px] font-bold text-foreground border ${
+                  tx.provider === "MTN" ? "border-mtn text-mtn" : tx.provider === "Zamtel" ? "border-zamtel text-zamtel" : "border-airtel text-airtel"
+                }`}>
                   {tx.provider[0]}
                 </div>
                 <div>

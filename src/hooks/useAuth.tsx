@@ -6,6 +6,8 @@ interface Merchant {
   id: string;
   phone_number: string;
   name: string;
+  daily_sales_goal?: number;
+  approval_status?: string;
 }
 
 interface AuthContextType {
@@ -36,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchMerchant = useCallback(async (userId: string) => {
     const { data } = await supabase
       .from("merchants")
-      .select("id, phone_number, name")
+      .select("id, phone_number, name, daily_sales_goal, approval_status")
       .eq("user_id", userId)
       .single();
     setMerchant(data);
