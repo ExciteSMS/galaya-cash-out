@@ -15,6 +15,7 @@ type SettingsView = "main" | "profile" | "payments" | "notifications" | "help" |
 
 const SettingsScreen = () => {
   const { merchant, logout } = useAuth();
+  const features = useFeatureFlags();
   const [view, setView] = useState<SettingsView>("main");
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
