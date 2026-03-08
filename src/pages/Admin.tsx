@@ -31,6 +31,7 @@ const navItems: { tab: AdminTab; label: string; icon: React.ElementType }[] = [
   { tab: "users", label: "Users & Roles", icon: UserCog },
   { tab: "approvals", label: "Approvals", icon: CheckSquare },
   { tab: "charges", label: "Charges & Fees", icon: DollarSign },
+  { tab: "pos_features", label: "POS Features", icon: ToggleLeft },
   { tab: "refunds", label: "Refunds", icon: RotateCcw },
   { tab: "fraud", label: "Fraud Alerts", icon: ShieldAlert },
   { tab: "disbursements", label: "Disbursements", icon: ArrowDownToLine },
