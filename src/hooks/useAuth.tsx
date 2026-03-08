@@ -6,6 +6,8 @@ interface Merchant {
   id: string;
   phone_number: string;
   name: string;
+  daily_sales_goal?: number;
+  approval_status?: string;
 }
 
 interface AuthContextType {
