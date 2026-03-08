@@ -29,10 +29,13 @@ export function FeatureFlagsProvider({ children }: { children: React.ReactNode }
   const [flags, setFlags] = useState<FeatureFlags>(defaults);
 
   useEffect(() => {
-    getSettings()
-      .then((data) => {
+    supabase
+      .from("app_settings")
+      .select("key, value")
+      .like("key", "feature_%")
+      .then(({ data }) => {
         const map: Record<string, string> = {};
-        data.forEach((s: any) => (map[s.key] = s.value));
+        (data || []).forEach((s: any) => (map[s.key] = s.value));
         setFlags({
           qrCode: map.feature_qr_code !== "false",
           salesGoal: map.feature_sales_goal !== "false",
