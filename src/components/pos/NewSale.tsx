@@ -7,6 +7,8 @@ type SaleStep = "amount" | "phone" | "provider" | "confirm";
 interface NewSaleProps {
   onStartPayment: (provider: Provider, phone: string, amount: number) => void;
   onCancel: () => void;
+  initialPhone?: string;
+  initialAmount?: number;
 }
 
 const PROVIDERS: { id: Provider; name: string; color: string }[] = [
