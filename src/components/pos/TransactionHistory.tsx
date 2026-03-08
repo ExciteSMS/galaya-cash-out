@@ -1,8 +1,9 @@
 import { Transaction } from "@/lib/api";
-import { Search, Download, FileText, RotateCcw } from "lucide-react";
+import { Search, Download, FileText, RotateCcw, Printer } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import RefundRequest from "./RefundRequest";
+import { printReceiptInline } from "@/lib/printReceipt";
 
 interface TransactionHistoryProps {
   transactions: Transaction[];
