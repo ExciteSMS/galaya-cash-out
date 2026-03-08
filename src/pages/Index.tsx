@@ -221,10 +221,11 @@ const ATMBezelBottom = () => (
 );
 
 const ATMFrame = ({ children }: { children: React.ReactNode }) => (
-  <div className="min-h-screen bg-background flex items-center justify-center p-4">
-    <div className="w-full max-w-md">
-      {/* Top bezel */}
-      <div className="bg-muted rounded-t-lg border border-border p-3 flex items-center justify-between">
+  <div className="min-h-screen bg-background flex flex-col md:flex-row md:items-center md:justify-center md:p-4">
+    {/* Mobile: full screen, no bezel */}
+    <div className="w-full md:max-w-md flex flex-col min-h-screen md:min-h-0">
+      {/* Top bezel - hidden on mobile */}
+      <div className="hidden md:flex bg-muted rounded-t-lg border border-border p-3 items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
           <span className="font-display text-xs text-primary tracking-[0.3em] uppercase text-glow">
@@ -234,15 +235,28 @@ const ATMFrame = ({ children }: { children: React.ReactNode }) => (
         <div className="text-[10px] text-muted-foreground">v2.1</div>
       </div>
 
+      {/* Mobile top bar */}
+      <div className="flex md:hidden bg-muted border-b border-border px-4 py-2 items-center justify-between safe-top">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+          <span className="font-display text-[10px] text-primary tracking-[0.2em] uppercase text-glow">
+            Galaya
+          </span>
+        </div>
+        <div className="text-[10px] text-muted-foreground">v2.1</div>
+      </div>
+
       {/* Screen area */}
-      <div className="relative bg-card border-x border-border overflow-hidden atm-scanline atm-vignette atm-screen">
-        <div className="relative z-[3]">
+      <div className="relative flex-1 bg-card md:border-x border-border overflow-hidden atm-scanline atm-vignette atm-screen">
+        <div className="relative z-[3] h-full">
           {children}
         </div>
       </div>
 
-      {/* Bottom bezel */}
-      <ATMBezelBottom />
+      {/* Bottom bezel - hidden on mobile */}
+      <div className="hidden md:block">
+        <ATMBezelBottom />
+      </div>
     </div>
   </div>
 );
