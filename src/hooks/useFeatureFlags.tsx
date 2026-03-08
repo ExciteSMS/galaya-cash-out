@@ -29,11 +29,12 @@ export function FeatureFlagsProvider({ children }: { children: React.ReactNode }
   const [flags, setFlags] = useState<FeatureFlags>(defaults);
 
   useEffect(() => {
-    supabase
-      .from("app_settings")
-      .select("key, value")
-      .like("key", "feature_%")
-      .then(({ data }) => {
+    const load = async () => {
+      try {
+        const { data } = await supabase
+          .from("app_settings")
+          .select("key, value")
+          .like("key", "feature_%");
         const map: Record<string, string> = {};
         (data || []).forEach((s: any) => (map[s.key] = s.value));
         setFlags({
@@ -46,8 +47,11 @@ export function FeatureFlagsProvider({ children }: { children: React.ReactNode }
           receiptPrint: map.feature_receipt_print !== "false",
           loaded: true,
         });
-      })
-      .catch(() => setFlags((prev) => ({ ...prev, loaded: true })));
+      } catch {
+        setFlags((prev) => ({ ...prev, loaded: true }));
+      }
+    };
+    load();
   }, []);
 
   return (
