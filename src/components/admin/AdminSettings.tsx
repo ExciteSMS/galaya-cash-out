@@ -22,6 +22,7 @@ export default function AdminSettings() {
   const [saving, setSaving] = useState(false);
   const [showMoneyUnifyKey, setShowMoneyUnifyKey] = useState(false);
   const [showLipilaKey, setShowLipilaKey] = useState(false);
+  const [showSmsKey, setShowSmsKey] = useState(false);
 
   useEffect(() => {
     getSettings().then((data) => {
