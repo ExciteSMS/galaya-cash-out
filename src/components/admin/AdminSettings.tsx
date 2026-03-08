@@ -47,6 +47,7 @@ export default function AdminSettings() {
         upsertSetting(key, value)
       );
       await Promise.all(promises);
+      await logAudit("settings_updated", "app_settings", undefined, { keys: Object.keys(settings) });
       toast.success("Settings saved successfully");
     } catch (err: any) {
       toast.error(err.message || "Failed to save settings");
