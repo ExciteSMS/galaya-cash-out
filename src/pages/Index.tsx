@@ -154,7 +154,12 @@ const Index = () => {
     <ATMFrame>
       <div className={`flex flex-col min-h-[480px] ${showBottomNav ? "pb-12" : ""}`}>
         {saleFlow === "new" && (
-          <NewSale onStartPayment={handleStartPayment} onCancel={handleGoHome} />
+          <NewSale
+            onStartPayment={handleStartPayment}
+            onCancel={handleGoHome}
+            initialPhone={phone}
+            initialAmount={amount}
+          />
         )}
         {saleFlow === "ussd" && (
           <UssdPushScreen
