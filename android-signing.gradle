@@ -1,0 +1,21 @@
+// This file is added by CI to configure release signing.
+// Place it at android/app/signing.gradle and apply from build.gradle.
+
+android {
+    signingConfigs {
+        release {
+            storeFile file(System.getenv("ANDROID_KEYSTORE_FILE") ?: "release-keystore.jks")
+            storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: ""
+            keyAlias System.getenv("ANDROID_KEY_ALIAS") ?: ""
+            keyPassword System.getenv("ANDROID_KEY_PASSWORD") ?: ""
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
