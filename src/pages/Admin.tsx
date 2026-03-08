@@ -145,7 +145,7 @@ export default function Admin() {
         {activeTab === "merchants" && <AdminMerchants />}
         {activeTab === "users" && <AdminUsers />}
         {activeTab === "approvals" && <AdminApprovals />}
-        {activeTab === "tiers" && <AdminTiers />}
+        {activeTab === "charges" && <AdminCharges />}
         {activeTab === "refunds" && <AdminRefunds />}
         {activeTab === "fraud" && <AdminFraudAlerts />}
         {activeTab === "disbursements" && <AdminDisbursements />}
