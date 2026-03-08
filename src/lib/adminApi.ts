@@ -58,6 +58,18 @@ export async function getAllDisbursements() {
   return data || [];
 }
 
+export async function logAudit(action: string, targetType?: string, targetId?: string, details?: Record<string, any>): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  await supabase.from("admin_audit_log").insert({
+    admin_user_id: user.id,
+    action,
+    target_type: targetType || null,
+    target_id: targetId || null,
+    details: details || {},
+  });
+}
+
 export async function getPublicSettings(): Promise<Record<string, string>> {
   // For merchant-side: read withdrawal fee settings via edge function or public access
   // Since app_settings is admin-only, we use a simple fallback approach
