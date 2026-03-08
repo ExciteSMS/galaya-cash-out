@@ -13,10 +13,11 @@ import AdminFraudAlerts from "@/components/admin/AdminFraudAlerts";
 import AdminAnalytics from "@/components/admin/AdminAnalytics";
 import AdminTiers from "@/components/admin/AdminTiers";
 import AdminUsers from "@/components/admin/AdminUsers";
+import AdminApprovals from "@/components/admin/AdminApprovals";
 import {
   LayoutDashboard, ArrowLeftRight, Users, Settings, LogOut, Shield,
   ArrowDownToLine, ScrollText, RotateCcw, ShieldAlert, BarChart3,
-  Crown, UserCog, Menu, X,
+  Crown, UserCog, Menu, X, CheckSquare,
 } from "lucide-react";
 
 type AdminTab = "dashboard" | "analytics" | "transactions" | "merchants" | "users" | "approvals" | "tiers" | "refunds" | "fraud" | "disbursements" | "audit" | "settings";
