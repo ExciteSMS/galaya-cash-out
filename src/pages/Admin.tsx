@@ -88,8 +88,12 @@ export default function Admin() {
 
       <main className="flex-1 p-6 overflow-auto">
         {activeTab === "dashboard" && <AdminDashboard />}
+        {activeTab === "analytics" && <AdminAnalytics />}
         {activeTab === "transactions" && <AdminTransactions />}
         {activeTab === "merchants" && <AdminMerchants />}
+        {activeTab === "tiers" && <AdminTiers />}
+        {activeTab === "refunds" && <AdminRefunds />}
+        {activeTab === "fraud" && <AdminFraudAlerts />}
         {activeTab === "disbursements" && <AdminDisbursements />}
         {activeTab === "audit" && <AdminAuditLog />}
         {activeTab === "settings" && <AdminSettings />}
