@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getSettings, updateSetting, upsertSetting, logAudit } from "@/lib/adminApi";
+import { getSettings, upsertSetting, logAudit } from "@/lib/adminApi";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -7,14 +7,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Eye, EyeOff, MessageSquare, Save, Zap } from "lucide-react";
-
-const FEE_KEYS = [
-  { key: "fee_tier_50", label: "Up to K50" },
-  { key: "fee_tier_200", label: "K51 – K200" },
-  { key: "fee_tier_500", label: "K201 – K500" },
-  { key: "fee_tier_1000", label: "K501 – K1,000" },
-  { key: "fee_tier_above", label: "Above K1,000" },
-];
 
 export default function AdminSettings() {
   const [settings, setSettings] = useState<Record<string, string>>({});
@@ -44,11 +36,11 @@ export default function AdminSettings() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const promises = Object.entries(settings).map(([key, value]) =>
-        upsertSetting(key, value)
+      const gatewayAndSmsKeys = Object.keys(settings).filter(
+        (k) => k.startsWith("gateway_") || k.startsWith("moneyunify_") || k.startsWith("lipila_") || k.startsWith("sms_") || k.startsWith("excite_")
       );
-      await Promise.all(promises);
-      await logAudit("settings_updated", "app_settings", undefined, { keys: Object.keys(settings) });
+      await Promise.all(gatewayAndSmsKeys.map((key) => upsertSetting(key, settings[key])));
+      await logAudit("settings_updated", "app_settings", undefined, { keys: gatewayAndSmsKeys });
       toast.success("Settings saved successfully");
     } catch (err: any) {
       toast.error(err.message || "Failed to save settings");
@@ -100,11 +92,7 @@ export default function AdminSettings() {
                     placeholder="Enter your MoneyUnify auth_id"
                     className="pr-10"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowMoneyUnifyKey(!showMoneyUnifyKey)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
+                  <button type="button" onClick={() => setShowMoneyUnifyKey(!showMoneyUnifyKey)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                     {showMoneyUnifyKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
@@ -138,11 +126,7 @@ export default function AdminSettings() {
                       placeholder="Enter your Lipila API key"
                       className="pr-10"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowLipilaKey(!showLipilaKey)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    >
+                    <button type="button" onClick={() => setShowLipilaKey(!showLipilaKey)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                       {showLipilaKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
@@ -161,76 +145,6 @@ export default function AdminSettings() {
               <p className="font-medium">⚡ Both gateways enabled — Lipila will be used as the primary gateway.</p>
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      {/* Fee Configuration */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Fee Configuration</CardTitle>
-          <CardDescription>Set transaction fees per amount tier (in ZMW)</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {FEE_KEYS.map((tier) => (
-              <div key={tier.key}>
-                <Label htmlFor={tier.key}>{tier.label}</Label>
-                <Input
-                  id={tier.key}
-                  type="number"
-                  min="0"
-                  step="0.5"
-                  value={settings[tier.key] || "0"}
-                  onChange={(e) => handleChange(tier.key, e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Withdrawal Fees */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Withdrawal Fees</CardTitle>
-          <CardDescription>Platform fee charged to merchants on withdrawals</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="withdrawal_platform_fee_pct">Platform Fee (%)</Label>
-            <Input
-              id="withdrawal_platform_fee_pct"
-              type="number"
-              min="0"
-              max="100"
-              step="0.1"
-              value={settings.withdrawal_platform_fee_pct || "1"}
-              onChange={(e) => handleChange("withdrawal_platform_fee_pct", e.target.value)}
-              className="mt-1"
-            />
-            <p className="text-xs text-muted-foreground mt-1">Your platform revenue per withdrawal (default 1%)</p>
-          </div>
-          <div>
-            <Label htmlFor="withdrawal_gateway_fee_pct">Gateway Fee (%)</Label>
-            <Input
-              id="withdrawal_gateway_fee_pct"
-              type="number"
-              min="0"
-              max="100"
-              step="0.1"
-              value={settings.withdrawal_gateway_fee_pct || "3.5"}
-              onChange={(e) => handleChange("withdrawal_gateway_fee_pct", e.target.value)}
-              className="mt-1"
-            />
-            <p className="text-xs text-muted-foreground mt-1">Gateway settlement fee (default 3.5%)</p>
-          </div>
-          <div className="bg-muted rounded-lg p-3 text-sm">
-            <p className="font-medium text-foreground">Total merchant withdrawal cost: {
-              (parseFloat(settings.withdrawal_platform_fee_pct || "1") + parseFloat(settings.withdrawal_gateway_fee_pct || "3.5")).toFixed(1)
-            }%</p>
-            <p className="text-xs text-muted-foreground mt-1">Platform keeps {settings.withdrawal_platform_fee_pct || "1"}% · Gateway takes {settings.withdrawal_gateway_fee_pct || "3.5"}%</p>
-          </div>
         </CardContent>
       </Card>
 
@@ -268,17 +182,12 @@ export default function AdminSettings() {
                     placeholder="1|KpE6dAGE94RT..."
                     className="pr-10"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowSmsKey(!showSmsKey)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
+                  <button type="button" onClick={() => setShowSmsKey(!showSmsKey)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                     {showSmsKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">Get this from gateway.excitesms.com</p>
               </div>
-
               <div>
                 <Label htmlFor="sms-sender">Sender ID</Label>
                 <Input
@@ -290,7 +199,6 @@ export default function AdminSettings() {
                 />
                 <p className="text-xs text-muted-foreground mt-1">Name that appears as the SMS sender (max 11 chars)</p>
               </div>
-
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-foreground">Notify Merchant</p>
@@ -301,7 +209,6 @@ export default function AdminSettings() {
                   onCheckedChange={(checked) => handleToggle("sms_notify_merchant", checked)}
                 />
               </div>
-
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-foreground">Notify Customer</p>
@@ -319,7 +226,7 @@ export default function AdminSettings() {
 
       <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto">
         <Save className="h-4 w-4 mr-2" />
-        {saving ? "Saving..." : "Save All Settings"}
+        {saving ? "Saving..." : "Save Settings"}
       </Button>
     </div>
   );

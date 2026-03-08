@@ -11,16 +11,16 @@ import AdminAuditLog from "@/components/admin/AdminAuditLog";
 import AdminRefunds from "@/components/admin/AdminRefunds";
 import AdminFraudAlerts from "@/components/admin/AdminFraudAlerts";
 import AdminAnalytics from "@/components/admin/AdminAnalytics";
-import AdminTiers from "@/components/admin/AdminTiers";
 import AdminUsers from "@/components/admin/AdminUsers";
 import AdminApprovals from "@/components/admin/AdminApprovals";
+import AdminCharges from "@/components/admin/AdminCharges";
 import {
   LayoutDashboard, ArrowLeftRight, Users, Settings, LogOut, Shield,
   ArrowDownToLine, ScrollText, RotateCcw, ShieldAlert, BarChart3,
-  Crown, UserCog, Menu, X, CheckSquare,
+  DollarSign, UserCog, Menu, X, CheckSquare,
 } from "lucide-react";
 
-type AdminTab = "dashboard" | "analytics" | "transactions" | "merchants" | "users" | "approvals" | "tiers" | "refunds" | "fraud" | "disbursements" | "audit" | "settings";
+type AdminTab = "dashboard" | "analytics" | "transactions" | "merchants" | "users" | "approvals" | "charges" | "refunds" | "fraud" | "disbursements" | "audit" | "settings";
 
 const navItems: { tab: AdminTab; label: string; icon: React.ElementType }[] = [
   { tab: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -29,7 +29,7 @@ const navItems: { tab: AdminTab; label: string; icon: React.ElementType }[] = [
   { tab: "merchants", label: "Merchants", icon: Users },
   { tab: "users", label: "Users & Roles", icon: UserCog },
   { tab: "approvals", label: "Approvals", icon: CheckSquare },
-  { tab: "tiers", label: "Tiers", icon: Crown },
+  { tab: "charges", label: "Charges & Fees", icon: DollarSign },
   { tab: "refunds", label: "Refunds", icon: RotateCcw },
   { tab: "fraud", label: "Fraud Alerts", icon: ShieldAlert },
   { tab: "disbursements", label: "Disbursements", icon: ArrowDownToLine },
@@ -145,7 +145,7 @@ export default function Admin() {
         {activeTab === "merchants" && <AdminMerchants />}
         {activeTab === "users" && <AdminUsers />}
         {activeTab === "approvals" && <AdminApprovals />}
-        {activeTab === "tiers" && <AdminTiers />}
+        {activeTab === "charges" && <AdminCharges />}
         {activeTab === "refunds" && <AdminRefunds />}
         {activeTab === "fraud" && <AdminFraudAlerts />}
         {activeTab === "disbursements" && <AdminDisbursements />}
