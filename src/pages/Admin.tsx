@@ -8,14 +8,22 @@ import AdminMerchants from "@/components/admin/AdminMerchants";
 import AdminDisbursements from "@/components/admin/AdminDisbursements";
 import AdminSettings from "@/components/admin/AdminSettings";
 import AdminAuditLog from "@/components/admin/AdminAuditLog";
-import { LayoutDashboard, ArrowLeftRight, Users, Settings, LogOut, Shield, ArrowDownToLine, ScrollText } from "lucide-react";
+import AdminRefunds from "@/components/admin/AdminRefunds";
+import AdminFraudAlerts from "@/components/admin/AdminFraudAlerts";
+import AdminAnalytics from "@/components/admin/AdminAnalytics";
+import AdminTiers from "@/components/admin/AdminTiers";
+import { LayoutDashboard, ArrowLeftRight, Users, Settings, LogOut, Shield, ArrowDownToLine, ScrollText, RotateCcw, ShieldAlert, BarChart3, Crown } from "lucide-react";
 
-type AdminTab = "dashboard" | "transactions" | "merchants" | "disbursements" | "audit" | "settings";
+type AdminTab = "dashboard" | "analytics" | "transactions" | "merchants" | "refunds" | "fraud" | "tiers" | "disbursements" | "audit" | "settings";
 
 const navItems: { tab: AdminTab; label: string; icon: React.ElementType }[] = [
   { tab: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { tab: "analytics", label: "Analytics", icon: BarChart3 },
   { tab: "transactions", label: "Transactions", icon: ArrowLeftRight },
   { tab: "merchants", label: "Merchants", icon: Users },
+  { tab: "tiers", label: "Tiers", icon: Crown },
+  { tab: "refunds", label: "Refunds", icon: RotateCcw },
+  { tab: "fraud", label: "Fraud Alerts", icon: ShieldAlert },
   { tab: "disbursements", label: "Disbursements", icon: ArrowDownToLine },
   { tab: "audit", label: "Audit Log", icon: ScrollText },
   { tab: "settings", label: "Settings", icon: Settings },
