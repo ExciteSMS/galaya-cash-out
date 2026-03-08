@@ -19,7 +19,7 @@ import {
   Crown, UserCog, Menu, X,
 } from "lucide-react";
 
-type AdminTab = "dashboard" | "analytics" | "transactions" | "merchants" | "users" | "tiers" | "refunds" | "fraud" | "disbursements" | "audit" | "settings";
+type AdminTab = "dashboard" | "analytics" | "transactions" | "merchants" | "users" | "approvals" | "tiers" | "refunds" | "fraud" | "disbursements" | "audit" | "settings";
 
 const navItems: { tab: AdminTab; label: string; icon: React.ElementType }[] = [
   { tab: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -27,6 +27,7 @@ const navItems: { tab: AdminTab; label: string; icon: React.ElementType }[] = [
   { tab: "transactions", label: "Transactions", icon: ArrowLeftRight },
   { tab: "merchants", label: "Merchants", icon: Users },
   { tab: "users", label: "Users & Roles", icon: UserCog },
+  { tab: "approvals", label: "Approvals", icon: CheckSquare },
   { tab: "tiers", label: "Tiers", icon: Crown },
   { tab: "refunds", label: "Refunds", icon: RotateCcw },
   { tab: "fraud", label: "Fraud Alerts", icon: ShieldAlert },
