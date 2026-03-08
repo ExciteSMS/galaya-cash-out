@@ -6,6 +6,7 @@ import SalesGoalRing from "./SalesGoalRing";
 import MerchantQRCode from "./MerchantQRCode";
 import NotificationCenter from "./NotificationCenter";
 import { useAuth } from "@/hooks/useAuth";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 
 interface DashboardProps {
   transactions: Transaction[];
