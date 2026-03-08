@@ -72,7 +72,7 @@ const Dashboard = ({ transactions, onNewSale, onRepeatSale }: DashboardProps) =>
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <NotificationCenter />
+          {features.notifications && <NotificationCenter />}
           {pendingCount > 0 && (
             <div className="relative">
               <div className="w-8 h-8 rounded border border-primary/50 flex items-center justify-center">
