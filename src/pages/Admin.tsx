@@ -21,7 +21,7 @@ import {
   DollarSign, UserCog, Menu, X, CheckSquare, ToggleLeft,
 } from "lucide-react";
 
-type AdminTab = "dashboard" | "analytics" | "transactions" | "merchants" | "users" | "approvals" | "charges" | "refunds" | "fraud" | "disbursements" | "audit" | "settings";
+type AdminTab = "dashboard" | "analytics" | "transactions" | "merchants" | "users" | "approvals" | "charges" | "pos_features" | "refunds" | "fraud" | "disbursements" | "audit" | "settings";
 
 const navItems: { tab: AdminTab; label: string; icon: React.ElementType }[] = [
   { tab: "dashboard", label: "Dashboard", icon: LayoutDashboard },
