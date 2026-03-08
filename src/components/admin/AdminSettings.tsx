@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getSettings, updateSetting, upsertSetting } from "@/lib/adminApi";
+import { getSettings, updateSetting, upsertSetting, logAudit } from "@/lib/adminApi";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
