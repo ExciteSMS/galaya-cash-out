@@ -96,11 +96,21 @@ const Index = () => {
     setAmount(0);
   };
 
+  const handleRepeatSale = (repeatPhone: string, repeatAmount: number) => {
+    const detected = detectProvider(repeatPhone);
+    setPhone(repeatPhone);
+    setAmount(repeatAmount);
+    if (detected) setProvider(detected);
+    setSaleFlow("new");
+  };
+
   const handleGoHome = () => {
     setSaleFlow("idle");
     setTab("home");
     setTransaction(null);
   };
+
+  const pendingCount = transactions.filter(t => t.status === "pending").length;
 
   const navigateTab = (t: Tab) => {
     if (t === "sale") {
