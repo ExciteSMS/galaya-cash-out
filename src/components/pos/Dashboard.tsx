@@ -98,9 +98,6 @@ const Dashboard = ({ transactions, onNewSale, onRepeatSale }: DashboardProps) =>
         <ArrowUpRight className="w-6 h-6 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
       </button>
 
-      {/* Merchant Tier Badge */}
-      <MerchantTierBadge transactions={transactions} />
-
       {/* Today's Stats with comparison */}
       <div>
         <div className="flex items-center justify-between mb-1.5">

@@ -57,6 +57,9 @@ const BusinessProfile = ({ onBack }: BusinessProfileProps) => {
         </div>
       </div>
 
+      {/* Merchant Tier */}
+      <MerchantTierBadge transactions={transactions} />
+
       <div className="flex flex-col gap-4">
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">Business Name</label>
