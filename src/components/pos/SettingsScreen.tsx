@@ -31,15 +31,17 @@ const SettingsScreen = () => {
   if (view === "expenses") return <ExpenseTracker onBack={() => setView("main")} transactions={transactions} />;
   if (view === "goal") return <SalesGoalSettings onBack={() => setView("main")} />;
 
-  const items = [
-    { icon: Store, label: "Business Profile", desc: "Store name, address, tier", key: "profile" as const },
-    { icon: Target, label: "Daily Sales Goal", desc: "Set your daily target", key: "goal" as const },
-    { icon: Receipt, label: "Expenses", desc: "Track costs & profit/loss", key: "expenses" as const },
-    { icon: CreditCard, label: "Payment Settings", desc: "Mobile money providers", key: "payments" as const },
-    { icon: Wallet, label: "Payout Accounts", desc: "Where you receive earnings", key: "payout" as const },
-    { icon: Bell, label: "Notifications", desc: "Transaction alerts", key: "notifications" as const },
-    { icon: HelpCircle, label: "Help & Support", desc: "FAQ, contact us", key: "help" as const },
+  const allItems = [
+    { icon: Store, label: "Business Profile", desc: "Store name, address, tier", key: "profile" as const, always: true },
+    { icon: Target, label: "Daily Sales Goal", desc: "Set your daily target", key: "goal" as const, flag: features.salesGoal },
+    { icon: Receipt, label: "Expenses", desc: "Track costs & profit/loss", key: "expenses" as const, flag: features.expenseTracker },
+    { icon: CreditCard, label: "Payment Settings", desc: "Mobile money providers", key: "payments" as const, always: true },
+    { icon: Wallet, label: "Payout Accounts", desc: "Where you receive earnings", key: "payout" as const, flag: features.withdrawals },
+    { icon: Bell, label: "Notifications", desc: "Transaction alerts", key: "notifications" as const, flag: features.notifications },
+    { icon: HelpCircle, label: "Help & Support", desc: "FAQ, contact us", key: "help" as const, always: true },
   ];
+
+  const items = allItems.filter((item) => item.always || item.flag !== false);
 
   return (
     <div className="flex flex-col h-full p-4">
