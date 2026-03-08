@@ -152,7 +152,9 @@ const Index = () => {
 
   return (
     <ATMFrame>
-      <div className={`flex flex-col min-h-[480px] ${showBottomNav ? "pb-12" : ""}`}>
+      <div className={`flex flex-col h-[480px] ${showBottomNav ? "" : ""}`}>
+        {/* Scrollable content area */}
+        <div className={`flex-1 overflow-y-auto ${showBottomNav ? "pb-14" : ""}`}>
         {saleFlow === "new" && (
           <NewSale
             onStartPayment={handleStartPayment}
