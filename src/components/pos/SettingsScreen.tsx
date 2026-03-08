@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Store, CreditCard, Bell, HelpCircle, LogOut, Wallet, Receipt, Target } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import BusinessProfile from "./BusinessProfile";
 import PaymentSettings from "./PaymentSettings";
 import NotificationSettings from "./NotificationSettings";
@@ -9,7 +10,6 @@ import PayoutAccounts from "./PayoutAccounts";
 import ExpenseTracker from "./ExpenseTracker";
 import SalesGoalSettings from "./SalesGoalSettings";
 import { getTransactions, Transaction } from "@/lib/api";
-import { useEffect } from "react";
 
 type SettingsView = "main" | "profile" | "payments" | "notifications" | "help" | "payout" | "expenses" | "goal";
 
