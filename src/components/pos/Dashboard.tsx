@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { ArrowUpRight, TrendingUp, TrendingDown, Wallet, Hash, Calendar, BarChart3, Repeat, Star } from "lucide-react";
-import MerchantTierBadge from "./MerchantTierBadge";
+import { Transaction } from "@/lib/api";
 import { Transaction } from "@/lib/api";
 import { subDays, startOfDay, eachDayOfInterval, format } from "date-fns";
 
