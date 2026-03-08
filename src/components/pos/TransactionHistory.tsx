@@ -184,14 +184,25 @@ const TransactionHistory = ({ transactions }: TransactionHistoryProps) => {
               >
                 {tx.status}
               </span>
-              {tx.status === "success" && (
+              <div className="flex items-center gap-2 mt-0.5">
                 <button
-                  onClick={() => setRefundTx(tx)}
-                  className="text-[10px] text-muted-foreground hover:text-primary flex items-center gap-0.5 mt-0.5"
+                  onClick={() => {
+                    printReceiptInline(tx);
+                    toast.success("Printing receipt...");
+                  }}
+                  className="text-[10px] text-muted-foreground hover:text-primary flex items-center gap-0.5"
                 >
-                  <RotateCcw className="w-3 h-3" /> Refund
+                  <Printer className="w-3 h-3" /> Reprint
                 </button>
-              )}
+                {tx.status === "success" && (
+                  <button
+                    onClick={() => setRefundTx(tx)}
+                    className="text-[10px] text-muted-foreground hover:text-primary flex items-center gap-0.5"
+                  >
+                    <RotateCcw className="w-3 h-3" /> Refund
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         ))}
