@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext, useContext } from "react";
-import { getSettings } from "@/lib/api";
+import { supabase } from "@/integrations/supabase/client";
 
 interface FeatureFlags {
   qrCode: boolean;
