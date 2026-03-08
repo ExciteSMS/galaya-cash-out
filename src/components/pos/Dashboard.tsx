@@ -101,7 +101,7 @@ const Dashboard = ({ transactions, onNewSale, onRepeatSale }: DashboardProps) =>
       </button>
 
       {/* Daily Sales Goal */}
-      <SalesGoalRing transactions={transactions} goal={dailyGoal} />
+      {features.salesGoal && <SalesGoalRing transactions={transactions} goal={dailyGoal} />}
 
       {/* Today's Stats */}
       <div>
