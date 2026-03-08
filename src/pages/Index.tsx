@@ -186,7 +186,7 @@ const Index = () => {
 
         {showBottomNav && (
           <div className="absolute bottom-0 left-0 right-0">
-            <BottomNav active={tab} onNavigate={navigateTab} />
+            <BottomNav active={tab} onNavigate={navigateTab} pendingCount={pendingCount} />
           </div>
         )}
       </div>
