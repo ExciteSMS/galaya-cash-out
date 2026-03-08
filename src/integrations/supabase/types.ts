@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          admin_user_id: string
+          created_at: string
+          details: Json | null
+          id: string
+          target_id: string | null
+          target_type: string | null
+        }
+        Insert: {
+          action: string
+          admin_user_id: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Update: {
+          action?: string
+          admin_user_id?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           id: string
@@ -133,6 +163,7 @@ export type Database = {
           notification_daily_summary: boolean | null
           notification_transactions: boolean | null
           phone_number: string
+          status: string
           user_id: string
         }
         Insert: {
@@ -143,6 +174,7 @@ export type Database = {
           notification_daily_summary?: boolean | null
           notification_transactions?: boolean | null
           phone_number: string
+          status?: string
           user_id: string
         }
         Update: {
@@ -153,6 +185,7 @@ export type Database = {
           notification_daily_summary?: boolean | null
           notification_transactions?: boolean | null
           phone_number?: string
+          status?: string
           user_id?: string
         }
         Relationships: []
