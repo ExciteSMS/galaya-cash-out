@@ -17,6 +17,11 @@ const BusinessProfile = ({ onBack }: BusinessProfileProps) => {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+
+  useEffect(() => {
+    getTransactions().then(setTransactions).catch(console.error);
+  }, []);
 
   const handleSave = async () => {
     if (!name.trim()) {
