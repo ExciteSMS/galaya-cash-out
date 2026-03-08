@@ -152,7 +152,9 @@ const Index = () => {
 
   return (
     <ATMFrame>
-      <div className={`flex flex-col min-h-[480px] ${showBottomNav ? "pb-12" : ""}`}>
+      <div className={`flex flex-col h-[480px] ${showBottomNav ? "" : ""}`}>
+        {/* Scrollable content area */}
+        <div className={`flex-1 overflow-y-auto ${showBottomNav ? "pb-14" : ""}`}>
         {saleFlow === "new" && (
           <NewSale
             onStartPayment={handleStartPayment}
@@ -188,9 +190,10 @@ const Index = () => {
         {saleFlow === "idle" && tab === "settings" && (
           <SettingsScreen />
         )}
+        </div>
 
         {showBottomNav && (
-          <div className="absolute bottom-0 left-0 right-0">
+          <div className="sticky bottom-0 left-0 right-0 z-10">
             <BottomNav active={tab} onNavigate={navigateTab} pendingCount={pendingCount} />
           </div>
         )}
