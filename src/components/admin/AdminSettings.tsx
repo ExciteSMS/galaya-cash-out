@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Eye, EyeOff, Save, Zap } from "lucide-react";
+import { Eye, EyeOff, MessageSquare, Save, Zap } from "lucide-react";
 
 const FEE_KEYS = [
   { key: "fee_tier_50", label: "Up to K50" },
