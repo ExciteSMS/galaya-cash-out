@@ -80,6 +80,11 @@ function exportPDF(transactions: Transaction[]) {
 const TransactionHistory = ({ transactions }: TransactionHistoryProps) => {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "success" | "failed">("all");
+  const [refundTx, setRefundTx] = useState<Transaction | null>(null);
+
+  if (refundTx) {
+    return <RefundRequest transaction={refundTx} onBack={() => setRefundTx(null)} onSuccess={() => setRefundTx(null)} />;
+  }
 
   const filtered = transactions.filter((tx) => {
     if (filter !== "all" && tx.status !== filter) return false;
