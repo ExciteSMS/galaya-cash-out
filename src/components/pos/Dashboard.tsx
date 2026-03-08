@@ -136,7 +136,7 @@ const Dashboard = ({ transactions, onNewSale, onRepeatSale }: DashboardProps) =>
       </div>
 
       {/* QR Code */}
-      <MerchantQRCode />
+      {features.qrCode && <MerchantQRCode />}
 
       {/* Mini weekly chart */}
       <div className="bg-secondary rounded-lg border border-border p-3">
