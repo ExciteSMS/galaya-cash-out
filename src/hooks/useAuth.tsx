@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchMerchant = useCallback(async (userId: string) => {
     const { data } = await supabase
       .from("merchants")
-      .select("id, phone_number, name")
+      .select("id, phone_number, name, daily_sales_goal, approval_status")
       .eq("user_id", userId)
       .single();
     setMerchant(data);
