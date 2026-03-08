@@ -139,7 +139,7 @@ const Index = () => {
     );
   }
 
-  const showBottomNav = saleFlow === "idle";
+  const showBottomNav = true;
 
   return (
     <ATMFrame>
