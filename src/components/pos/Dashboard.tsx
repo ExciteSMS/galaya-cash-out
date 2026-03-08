@@ -6,6 +6,7 @@ import SalesGoalRing from "./SalesGoalRing";
 import MerchantQRCode from "./MerchantQRCode";
 import NotificationCenter from "./NotificationCenter";
 import { useAuth } from "@/hooks/useAuth";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 
 interface DashboardProps {
   transactions: Transaction[];
@@ -15,6 +16,7 @@ interface DashboardProps {
 
 const Dashboard = ({ transactions, onNewSale, onRepeatSale }: DashboardProps) => {
   const { merchant } = useAuth();
+  const features = useFeatureFlags();
   const today = new Date().toDateString();
   const yesterday = subDays(new Date(), 1).toDateString();
   const successTxs = transactions.filter((t) => t.status === "success");
@@ -70,7 +72,7 @@ const Dashboard = ({ transactions, onNewSale, onRepeatSale }: DashboardProps) =>
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <NotificationCenter />
+          {features.notifications && <NotificationCenter />}
           {pendingCount > 0 && (
             <div className="relative">
               <div className="w-8 h-8 rounded border border-primary/50 flex items-center justify-center">
@@ -99,7 +101,7 @@ const Dashboard = ({ transactions, onNewSale, onRepeatSale }: DashboardProps) =>
       </button>
 
       {/* Daily Sales Goal */}
-      <SalesGoalRing transactions={transactions} goal={dailyGoal} />
+      {features.salesGoal && <SalesGoalRing transactions={transactions} goal={dailyGoal} />}
 
       {/* Today's Stats */}
       <div>
@@ -134,7 +136,7 @@ const Dashboard = ({ transactions, onNewSale, onRepeatSale }: DashboardProps) =>
       </div>
 
       {/* QR Code */}
-      <MerchantQRCode />
+      {features.qrCode && <MerchantQRCode />}
 
       {/* Mini weekly chart */}
       <div className="bg-secondary rounded-lg border border-border p-3">

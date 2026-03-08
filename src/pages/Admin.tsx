@@ -14,13 +14,14 @@ import AdminAnalytics from "@/components/admin/AdminAnalytics";
 import AdminUsers from "@/components/admin/AdminUsers";
 import AdminApprovals from "@/components/admin/AdminApprovals";
 import AdminCharges from "@/components/admin/AdminCharges";
+import AdminPOSFeatures from "@/components/admin/AdminPOSFeatures";
 import {
   LayoutDashboard, ArrowLeftRight, Users, Settings, LogOut, Shield,
   ArrowDownToLine, ScrollText, RotateCcw, ShieldAlert, BarChart3,
-  DollarSign, UserCog, Menu, X, CheckSquare,
+  DollarSign, UserCog, Menu, X, CheckSquare, ToggleLeft,
 } from "lucide-react";
 
-type AdminTab = "dashboard" | "analytics" | "transactions" | "merchants" | "users" | "approvals" | "charges" | "refunds" | "fraud" | "disbursements" | "audit" | "settings";
+type AdminTab = "dashboard" | "analytics" | "transactions" | "merchants" | "users" | "approvals" | "charges" | "pos_features" | "refunds" | "fraud" | "disbursements" | "audit" | "settings";
 
 const navItems: { tab: AdminTab; label: string; icon: React.ElementType }[] = [
   { tab: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -30,6 +31,7 @@ const navItems: { tab: AdminTab; label: string; icon: React.ElementType }[] = [
   { tab: "users", label: "Users & Roles", icon: UserCog },
   { tab: "approvals", label: "Approvals", icon: CheckSquare },
   { tab: "charges", label: "Charges & Fees", icon: DollarSign },
+  { tab: "pos_features", label: "POS Features", icon: ToggleLeft },
   { tab: "refunds", label: "Refunds", icon: RotateCcw },
   { tab: "fraud", label: "Fraud Alerts", icon: ShieldAlert },
   { tab: "disbursements", label: "Disbursements", icon: ArrowDownToLine },
@@ -146,6 +148,7 @@ export default function Admin() {
         {activeTab === "users" && <AdminUsers />}
         {activeTab === "approvals" && <AdminApprovals />}
         {activeTab === "charges" && <AdminCharges />}
+        {activeTab === "pos_features" && <AdminPOSFeatures />}
         {activeTab === "refunds" && <AdminRefunds />}
         {activeTab === "fraud" && <AdminFraudAlerts />}
         {activeTab === "disbursements" && <AdminDisbursements />}
