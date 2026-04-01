@@ -15,13 +15,17 @@ import AdminUsers from "@/components/admin/AdminUsers";
 import AdminApprovals from "@/components/admin/AdminApprovals";
 import AdminCharges from "@/components/admin/AdminCharges";
 import AdminPOSFeatures from "@/components/admin/AdminPOSFeatures";
+import AdminBroadcast from "@/components/admin/AdminBroadcast";
+import AdminRevenueReports from "@/components/admin/AdminRevenueReports";
+import AdminSystemHealth from "@/components/admin/AdminSystemHealth";
 import {
   LayoutDashboard, ArrowLeftRight, Users, Settings, LogOut, Shield,
   ArrowDownToLine, ScrollText, RotateCcw, ShieldAlert, BarChart3,
   DollarSign, UserCog, Menu, X, CheckSquare, ToggleLeft,
+  Megaphone, FileText, Activity,
 } from "lucide-react";
 
-type AdminTab = "dashboard" | "analytics" | "transactions" | "merchants" | "users" | "approvals" | "charges" | "pos_features" | "refunds" | "fraud" | "disbursements" | "audit" | "settings";
+type AdminTab = "dashboard" | "analytics" | "transactions" | "merchants" | "users" | "approvals" | "charges" | "pos_features" | "broadcast" | "reports" | "health" | "refunds" | "fraud" | "disbursements" | "audit" | "settings";
 
 const navItems: { tab: AdminTab; label: string; icon: React.ElementType }[] = [
   { tab: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -32,6 +36,9 @@ const navItems: { tab: AdminTab; label: string; icon: React.ElementType }[] = [
   { tab: "approvals", label: "Approvals", icon: CheckSquare },
   { tab: "charges", label: "Charges & Fees", icon: DollarSign },
   { tab: "pos_features", label: "POS Features", icon: ToggleLeft },
+  { tab: "broadcast", label: "Broadcast", icon: Megaphone },
+  { tab: "reports", label: "Revenue Reports", icon: FileText },
+  { tab: "health", label: "System Health", icon: Activity },
   { tab: "refunds", label: "Refunds", icon: RotateCcw },
   { tab: "fraud", label: "Fraud Alerts", icon: ShieldAlert },
   { tab: "disbursements", label: "Disbursements", icon: ArrowDownToLine },
@@ -149,6 +156,9 @@ export default function Admin() {
         {activeTab === "approvals" && <AdminApprovals />}
         {activeTab === "charges" && <AdminCharges />}
         {activeTab === "pos_features" && <AdminPOSFeatures />}
+        {activeTab === "broadcast" && <AdminBroadcast />}
+        {activeTab === "reports" && <AdminRevenueReports />}
+        {activeTab === "health" && <AdminSystemHealth />}
         {activeTab === "refunds" && <AdminRefunds />}
         {activeTab === "fraud" && <AdminFraudAlerts />}
         {activeTab === "disbursements" && <AdminDisbursements />}
