@@ -9,6 +9,9 @@ interface FeatureFlags {
   withdrawals: boolean;
   refunds: boolean;
   receiptPrint: boolean;
+  loyaltyPoints: boolean;
+  staffAccounts: boolean;
+  darkMode: boolean;
   loaded: boolean;
 }
 
@@ -20,6 +23,9 @@ const defaults: FeatureFlags = {
   withdrawals: true,
   refunds: true,
   receiptPrint: true,
+  loyaltyPoints: true,
+  staffAccounts: true,
+  darkMode: true,
   loaded: false,
 };
 
