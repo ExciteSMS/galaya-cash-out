@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Store, CreditCard, Bell, HelpCircle, LogOut, Wallet, Receipt, Target } from "lucide-react";
+import { Store, CreditCard, Bell, HelpCircle, LogOut, Wallet, Receipt, Target, Star, Users, Moon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import BusinessProfile from "./BusinessProfile";
@@ -9,9 +9,12 @@ import HelpSupport from "./HelpSupport";
 import PayoutAccounts from "./PayoutAccounts";
 import ExpenseTracker from "./ExpenseTracker";
 import SalesGoalSettings from "./SalesGoalSettings";
+import LoyaltyPoints from "./LoyaltyPoints";
+import StaffAccounts from "./StaffAccounts";
+import ThemeToggle from "./ThemeToggle";
 import { getTransactions, Transaction } from "@/lib/api";
 
-type SettingsView = "main" | "profile" | "payments" | "notifications" | "help" | "payout" | "expenses" | "goal";
+type SettingsView = "main" | "profile" | "payments" | "notifications" | "help" | "payout" | "expenses" | "goal" | "loyalty" | "staff";
 
 const SettingsScreen = () => {
   const { merchant, logout } = useAuth();
