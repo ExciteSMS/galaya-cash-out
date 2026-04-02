@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Save, ToggleLeft, QrCode, Target, Receipt, Bell, Wallet, RotateCcw, Printer } from "lucide-react";
+import { Save, ToggleLeft, QrCode, Target, Receipt, Bell, Wallet, RotateCcw, Printer, Star, Users, Moon } from "lucide-react";
 
 const POS_FEATURES = [
   { key: "feature_qr_code", label: "QR Code Payments", desc: "Merchants can display scannable QR codes for customer payments", icon: QrCode },
@@ -14,6 +14,9 @@ const POS_FEATURES = [
   { key: "feature_withdrawals", label: "Withdrawals", desc: "Merchants can withdraw their balance to mobile money", icon: Wallet },
   { key: "feature_refunds", label: "Refund Requests", desc: "Allow merchants to request refunds on transactions", icon: RotateCcw },
   { key: "feature_receipt_print", label: "Receipt Printing", desc: "Print or share receipts for completed transactions", icon: Printer },
+  { key: "feature_loyalty_points", label: "Loyalty Points", desc: "Customer rewards program with points per transaction", icon: Star },
+  { key: "feature_staff_accounts", label: "Staff Accounts", desc: "Multiple cashier/operator logins per merchant", icon: Users },
+  { key: "feature_dark_mode", label: "Dark Mode", desc: "Allow merchants to switch between light and dark themes", icon: Moon },
 ];
 
 export default function AdminPOSFeatures() {

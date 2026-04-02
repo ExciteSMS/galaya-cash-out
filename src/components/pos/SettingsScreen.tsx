@@ -74,6 +74,16 @@ const SettingsScreen = () => {
         ))}
       </div>
 
+      {/* Dark Mode Toggle */}
+      {features.darkMode && (
+        <div className="mt-4">
+          <p className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold mb-2 flex items-center gap-1">
+            <Moon className="w-3 h-3" /> Appearance
+          </p>
+          <ThemeToggle />
+        </div>
+      )}
+
       <div className="mt-auto pt-6">
         <button onClick={logout} className="flex items-center gap-2 text-destructive text-sm font-medium hover:underline">
           <LogOut className="w-4 h-4" /> Sign Out

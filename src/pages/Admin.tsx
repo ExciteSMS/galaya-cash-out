@@ -163,6 +163,8 @@ export default function Admin() {
         {activeTab === "broadcast" && <AdminBroadcast />}
         {activeTab === "reports" && <AdminRevenueReports />}
         {activeTab === "health" && <AdminSystemHealth />}
+        {activeTab === "activity_feed" && <AdminActivityFeed />}
+        {activeTab === "permissions" && <AdminRolePermissions />}
         {activeTab === "refunds" && <AdminRefunds />}
         {activeTab === "fraud" && <AdminFraudAlerts />}
         {activeTab === "disbursements" && <AdminDisbursements />}
