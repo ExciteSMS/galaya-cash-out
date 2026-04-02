@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Store, CreditCard, Bell, HelpCircle, LogOut, Wallet, Receipt, Target } from "lucide-react";
+import { Store, CreditCard, Bell, HelpCircle, LogOut, Wallet, Receipt, Target, Star, Users, Moon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import BusinessProfile from "./BusinessProfile";
@@ -9,9 +9,12 @@ import HelpSupport from "./HelpSupport";
 import PayoutAccounts from "./PayoutAccounts";
 import ExpenseTracker from "./ExpenseTracker";
 import SalesGoalSettings from "./SalesGoalSettings";
+import LoyaltyPoints from "./LoyaltyPoints";
+import StaffAccounts from "./StaffAccounts";
+import ThemeToggle from "./ThemeToggle";
 import { getTransactions, Transaction } from "@/lib/api";
 
-type SettingsView = "main" | "profile" | "payments" | "notifications" | "help" | "payout" | "expenses" | "goal";
+type SettingsView = "main" | "profile" | "payments" | "notifications" | "help" | "payout" | "expenses" | "goal" | "loyalty" | "staff";
 
 const SettingsScreen = () => {
   const { merchant, logout } = useAuth();
@@ -30,11 +33,15 @@ const SettingsScreen = () => {
   if (view === "payout") return <PayoutAccounts onBack={() => setView("main")} />;
   if (view === "expenses") return <ExpenseTracker onBack={() => setView("main")} transactions={transactions} />;
   if (view === "goal") return <SalesGoalSettings onBack={() => setView("main")} />;
+  if (view === "loyalty") return <LoyaltyPoints onBack={() => setView("main")} />;
+  if (view === "staff") return <StaffAccounts onBack={() => setView("main")} />;
 
   const allItems = [
     { icon: Store, label: "Business Profile", desc: "Store name, address, tier", key: "profile" as const, always: true },
     { icon: Target, label: "Daily Sales Goal", desc: "Set your daily target", key: "goal" as const, flag: features.salesGoal },
     { icon: Receipt, label: "Expenses", desc: "Track costs & profit/loss", key: "expenses" as const, flag: features.expenseTracker },
+    { icon: Star, label: "Loyalty Points", desc: "Reward repeat customers", key: "loyalty" as const, flag: features.loyaltyPoints },
+    { icon: Users, label: "Staff Accounts", desc: "Manage cashiers & operators", key: "staff" as const, flag: features.staffAccounts },
     { icon: CreditCard, label: "Payment Settings", desc: "Mobile money providers", key: "payments" as const, always: true },
     { icon: Wallet, label: "Payout Accounts", desc: "Where you receive earnings", key: "payout" as const, flag: features.withdrawals },
     { icon: Bell, label: "Notifications", desc: "Transaction alerts", key: "notifications" as const, flag: features.notifications },
@@ -66,6 +73,16 @@ const SettingsScreen = () => {
           </button>
         ))}
       </div>
+
+      {/* Dark Mode Toggle */}
+      {features.darkMode && (
+        <div className="mt-4">
+          <p className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold mb-2 flex items-center gap-1">
+            <Moon className="w-3 h-3" /> Appearance
+          </p>
+          <ThemeToggle />
+        </div>
+      )}
 
       <div className="mt-auto pt-6">
         <button onClick={logout} className="flex items-center gap-2 text-destructive text-sm font-medium hover:underline">

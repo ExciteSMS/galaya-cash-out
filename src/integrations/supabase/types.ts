@@ -211,6 +211,47 @@ export type Database = {
           },
         ]
       }
+      loyalty_points: {
+        Row: {
+          created_at: string
+          customer_phone: string
+          id: string
+          merchant_id: string
+          points: number
+          total_earned: number
+          total_redeemed: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_phone: string
+          id?: string
+          merchant_id: string
+          points?: number
+          total_earned?: number
+          total_redeemed?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_phone?: string
+          id?: string
+          merchant_id?: string
+          points?: number
+          total_earned?: number
+          total_redeemed?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_points_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       merchant_payout_accounts: {
         Row: {
           account_name: string | null
@@ -242,6 +283,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "merchant_payout_accounts_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      merchant_staff: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          last_login: string | null
+          merchant_id: string
+          name: string
+          phone: string
+          pin_hash: string
+          role: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_login?: string | null
+          merchant_id: string
+          name: string
+          phone: string
+          pin_hash?: string
+          role?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_login?: string | null
+          merchant_id?: string
+          name?: string
+          phone?: string
+          pin_hash?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merchant_staff_merchant_id_fkey"
             columns: ["merchant_id"]
             isOneToOne: false
             referencedRelation: "merchants"

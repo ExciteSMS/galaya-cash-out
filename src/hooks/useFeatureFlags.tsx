@@ -9,6 +9,9 @@ interface FeatureFlags {
   withdrawals: boolean;
   refunds: boolean;
   receiptPrint: boolean;
+  loyaltyPoints: boolean;
+  staffAccounts: boolean;
+  darkMode: boolean;
   loaded: boolean;
 }
 
@@ -20,6 +23,9 @@ const defaults: FeatureFlags = {
   withdrawals: true,
   refunds: true,
   receiptPrint: true,
+  loyaltyPoints: true,
+  staffAccounts: true,
+  darkMode: true,
   loaded: false,
 };
 
@@ -45,6 +51,9 @@ export function FeatureFlagsProvider({ children }: { children: React.ReactNode }
           withdrawals: map.feature_withdrawals !== "false",
           refunds: map.feature_refunds !== "false",
           receiptPrint: map.feature_receipt_print !== "false",
+          loyaltyPoints: map.feature_loyalty_points !== "false",
+          staffAccounts: map.feature_staff_accounts !== "false",
+          darkMode: map.feature_dark_mode !== "false",
           loaded: true,
         });
       } catch {
