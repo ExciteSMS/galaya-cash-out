@@ -40,6 +40,8 @@ const SettingsScreen = () => {
     { icon: Store, label: "Business Profile", desc: "Store name, address, tier", key: "profile" as const, always: true },
     { icon: Target, label: "Daily Sales Goal", desc: "Set your daily target", key: "goal" as const, flag: features.salesGoal },
     { icon: Receipt, label: "Expenses", desc: "Track costs & profit/loss", key: "expenses" as const, flag: features.expenseTracker },
+    { icon: Star, label: "Loyalty Points", desc: "Reward repeat customers", key: "loyalty" as const, flag: features.loyaltyPoints },
+    { icon: Users, label: "Staff Accounts", desc: "Manage cashiers & operators", key: "staff" as const, flag: features.staffAccounts },
     { icon: CreditCard, label: "Payment Settings", desc: "Mobile money providers", key: "payments" as const, always: true },
     { icon: Wallet, label: "Payout Accounts", desc: "Where you receive earnings", key: "payout" as const, flag: features.withdrawals },
     { icon: Bell, label: "Notifications", desc: "Transaction alerts", key: "notifications" as const, flag: features.notifications },
