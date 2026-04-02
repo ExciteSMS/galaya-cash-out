@@ -41,6 +41,8 @@ const navItems: { tab: AdminTab; label: string; icon: React.ElementType }[] = [
   { tab: "broadcast", label: "Broadcast", icon: Megaphone },
   { tab: "reports", label: "Revenue Reports", icon: FileText },
   { tab: "health", label: "System Health", icon: Activity },
+  { tab: "activity_feed", label: "Live Feed", icon: Radio },
+  { tab: "permissions", label: "Permissions", icon: KeyRound },
   { tab: "refunds", label: "Refunds", icon: RotateCcw },
   { tab: "fraud", label: "Fraud Alerts", icon: ShieldAlert },
   { tab: "disbursements", label: "Disbursements", icon: ArrowDownToLine },
