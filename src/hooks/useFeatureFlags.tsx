@@ -12,6 +12,8 @@ interface FeatureFlags {
   loyaltyPoints: boolean;
   staffAccounts: boolean;
   darkMode: boolean;
+  smsReceipt: boolean;
+  customerDirectory: boolean;
   loaded: boolean;
 }
 
