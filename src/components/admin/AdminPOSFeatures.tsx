@@ -17,6 +17,8 @@ const POS_FEATURES = [
   { key: "feature_loyalty_points", label: "Loyalty Points", desc: "Customer rewards program with points per transaction", icon: Star },
   { key: "feature_staff_accounts", label: "Staff Accounts", desc: "Multiple cashier/operator logins per merchant", icon: Users },
   { key: "feature_dark_mode", label: "Dark Mode", desc: "Allow merchants to switch between light and dark themes", icon: Moon },
+  { key: "feature_sms_receipt", label: "SMS Receipt", desc: "Send transaction receipt to customer via SMS after payment", icon: MessageSquare },
+  { key: "feature_customer_directory", label: "Customer Directory", desc: "Save and manage frequent customers with contact details", icon: BookUser },
 ];
 
 export default function AdminPOSFeatures() {
