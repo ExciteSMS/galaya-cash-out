@@ -36,6 +36,7 @@ const SettingsScreen = () => {
   if (view === "goal") return <SalesGoalSettings onBack={() => setView("main")} />;
   if (view === "loyalty") return <LoyaltyPoints onBack={() => setView("main")} />;
   if (view === "staff") return <StaffAccounts onBack={() => setView("main")} />;
+  if (view === "customers") return <CustomerDirectory onBack={() => setView("main")} />;
 
   const allItems = [
     { icon: Store, label: "Business Profile", desc: "Store name, address, tier", key: "profile" as const, always: true },
