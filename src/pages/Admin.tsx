@@ -20,26 +20,35 @@ import AdminRevenueReports from "@/components/admin/AdminRevenueReports";
 import AdminSystemHealth from "@/components/admin/AdminSystemHealth";
 import AdminActivityFeed from "@/components/admin/AdminActivityFeed";
 import AdminRolePermissions from "@/components/admin/AdminRolePermissions";
+import AdminOnboardingPipeline from "@/components/admin/AdminOnboardingPipeline";
+import AdminScheduledReports from "@/components/admin/AdminScheduledReports";
+import AdminActionNotifications from "@/components/admin/AdminActionNotifications";
+import AdminFeeSimulator from "@/components/admin/AdminFeeSimulator";
 import {
   LayoutDashboard, ArrowLeftRight, Users, Settings, LogOut, Shield,
   ArrowDownToLine, ScrollText, RotateCcw, ShieldAlert, BarChart3,
   DollarSign, UserCog, Menu, X, CheckSquare, ToggleLeft,
   Megaphone, FileText, Activity, Radio, KeyRound,
+  GitPullRequest, Clock, Bell, Calculator,
 } from "lucide-react";
 
-type AdminTab = "dashboard" | "analytics" | "transactions" | "merchants" | "users" | "approvals" | "charges" | "pos_features" | "broadcast" | "reports" | "health" | "activity_feed" | "permissions" | "refunds" | "fraud" | "disbursements" | "audit" | "settings";
+type AdminTab = "dashboard" | "analytics" | "transactions" | "merchants" | "users" | "approvals" | "charges" | "pos_features" | "broadcast" | "reports" | "health" | "activity_feed" | "permissions" | "refunds" | "fraud" | "disbursements" | "audit" | "settings" | "onboarding" | "scheduled_reports" | "action_notifications" | "fee_simulator";
 
 const navItems: { tab: AdminTab; label: string; icon: React.ElementType }[] = [
   { tab: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { tab: "analytics", label: "Analytics", icon: BarChart3 },
   { tab: "transactions", label: "Transactions", icon: ArrowLeftRight },
   { tab: "merchants", label: "Merchants", icon: Users },
+  { tab: "onboarding", label: "Onboarding", icon: GitPullRequest },
   { tab: "users", label: "Users & Roles", icon: UserCog },
   { tab: "approvals", label: "Approvals", icon: CheckSquare },
+  { tab: "action_notifications", label: "Alerts", icon: Bell },
   { tab: "charges", label: "Charges & Fees", icon: DollarSign },
+  { tab: "fee_simulator", label: "Fee Simulator", icon: Calculator },
   { tab: "pos_features", label: "POS Features", icon: ToggleLeft },
   { tab: "broadcast", label: "Broadcast", icon: Megaphone },
   { tab: "reports", label: "Revenue Reports", icon: FileText },
+  { tab: "scheduled_reports", label: "Auto Reports", icon: Clock },
   { tab: "health", label: "System Health", icon: Activity },
   { tab: "activity_feed", label: "Live Feed", icon: Radio },
   { tab: "permissions", label: "Permissions", icon: KeyRound },
@@ -170,6 +179,10 @@ export default function Admin() {
         {activeTab === "disbursements" && <AdminDisbursements />}
         {activeTab === "audit" && <AdminAuditLog />}
         {activeTab === "settings" && <AdminSettings />}
+        {activeTab === "onboarding" && <AdminOnboardingPipeline />}
+        {activeTab === "scheduled_reports" && <AdminScheduledReports />}
+        {activeTab === "action_notifications" && <AdminActionNotifications />}
+        {activeTab === "fee_simulator" && <AdminFeeSimulator />}
       </main>
     </div>
   );

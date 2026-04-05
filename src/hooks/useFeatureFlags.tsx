@@ -12,6 +12,8 @@ interface FeatureFlags {
   loyaltyPoints: boolean;
   staffAccounts: boolean;
   darkMode: boolean;
+  smsReceipt: boolean;
+  customerDirectory: boolean;
   loaded: boolean;
 }
 
@@ -26,6 +28,8 @@ const defaults: FeatureFlags = {
   loyaltyPoints: true,
   staffAccounts: true,
   darkMode: true,
+  smsReceipt: true,
+  customerDirectory: true,
   loaded: false,
 };
 
@@ -54,6 +58,8 @@ export function FeatureFlagsProvider({ children }: { children: React.ReactNode }
           loyaltyPoints: map.feature_loyalty_points !== "false",
           staffAccounts: map.feature_staff_accounts !== "false",
           darkMode: map.feature_dark_mode !== "false",
+          smsReceipt: map.feature_sms_receipt !== "false",
+          customerDirectory: map.feature_customer_directory !== "false",
           loaded: true,
         });
       } catch {

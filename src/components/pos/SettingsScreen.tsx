@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Store, CreditCard, Bell, HelpCircle, LogOut, Wallet, Receipt, Target, Star, Users, Moon } from "lucide-react";
+import { Store, CreditCard, Bell, HelpCircle, LogOut, Wallet, Receipt, Target, Star, Users, Moon, BookUser, MessageSquare } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import BusinessProfile from "./BusinessProfile";
@@ -12,9 +12,10 @@ import SalesGoalSettings from "./SalesGoalSettings";
 import LoyaltyPoints from "./LoyaltyPoints";
 import StaffAccounts from "./StaffAccounts";
 import ThemeToggle from "./ThemeToggle";
+import CustomerDirectory from "./CustomerDirectory";
 import { getTransactions, Transaction } from "@/lib/api";
 
-type SettingsView = "main" | "profile" | "payments" | "notifications" | "help" | "payout" | "expenses" | "goal" | "loyalty" | "staff";
+type SettingsView = "main" | "profile" | "payments" | "notifications" | "help" | "payout" | "expenses" | "goal" | "loyalty" | "staff" | "customers";
 
 const SettingsScreen = () => {
   const { merchant, logout } = useAuth();
@@ -35,6 +36,7 @@ const SettingsScreen = () => {
   if (view === "goal") return <SalesGoalSettings onBack={() => setView("main")} />;
   if (view === "loyalty") return <LoyaltyPoints onBack={() => setView("main")} />;
   if (view === "staff") return <StaffAccounts onBack={() => setView("main")} />;
+  if (view === "customers") return <CustomerDirectory onBack={() => setView("main")} />;
 
   const allItems = [
     { icon: Store, label: "Business Profile", desc: "Store name, address, tier", key: "profile" as const, always: true },
@@ -42,6 +44,7 @@ const SettingsScreen = () => {
     { icon: Receipt, label: "Expenses", desc: "Track costs & profit/loss", key: "expenses" as const, flag: features.expenseTracker },
     { icon: Star, label: "Loyalty Points", desc: "Reward repeat customers", key: "loyalty" as const, flag: features.loyaltyPoints },
     { icon: Users, label: "Staff Accounts", desc: "Manage cashiers & operators", key: "staff" as const, flag: features.staffAccounts },
+    { icon: BookUser, label: "Customer Directory", desc: "Save frequent customers", key: "customers" as const, flag: features.customerDirectory },
     { icon: CreditCard, label: "Payment Settings", desc: "Mobile money providers", key: "payments" as const, always: true },
     { icon: Wallet, label: "Payout Accounts", desc: "Where you receive earnings", key: "payout" as const, flag: features.withdrawals },
     { icon: Bell, label: "Notifications", desc: "Transaction alerts", key: "notifications" as const, flag: features.notifications },
