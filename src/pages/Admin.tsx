@@ -179,6 +179,10 @@ export default function Admin() {
         {activeTab === "disbursements" && <AdminDisbursements />}
         {activeTab === "audit" && <AdminAuditLog />}
         {activeTab === "settings" && <AdminSettings />}
+        {activeTab === "onboarding" && <AdminOnboardingPipeline />}
+        {activeTab === "scheduled_reports" && <AdminScheduledReports />}
+        {activeTab === "action_notifications" && <AdminActionNotifications />}
+        {activeTab === "fee_simulator" && <AdminFeeSimulator />}
       </main>
     </div>
   );
