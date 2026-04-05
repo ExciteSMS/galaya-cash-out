@@ -68,6 +68,56 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_directory: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          last_transaction_at: string | null
+          merchant_id: string
+          name: string
+          notes: string | null
+          phone: string
+          total_spent: number | null
+          total_transactions: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          last_transaction_at?: string | null
+          merchant_id: string
+          name: string
+          notes?: string | null
+          phone: string
+          total_spent?: number | null
+          total_transactions?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          last_transaction_at?: string | null
+          merchant_id?: string
+          name?: string
+          notes?: string | null
+          phone?: string
+          total_spent?: number | null
+          total_transactions?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_directory_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       disbursements: {
         Row: {
           amount: number
