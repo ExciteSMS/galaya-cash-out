@@ -28,6 +28,8 @@ const defaults: FeatureFlags = {
   loyaltyPoints: true,
   staffAccounts: true,
   darkMode: true,
+  smsReceipt: true,
+  customerDirectory: true,
   loaded: false,
 };
 
