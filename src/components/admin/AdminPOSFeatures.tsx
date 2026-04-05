@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Save, ToggleLeft, QrCode, Target, Receipt, Bell, Wallet, RotateCcw, Printer, Star, Users, Moon } from "lucide-react";
+import { Save, ToggleLeft, QrCode, Target, Receipt, Bell, Wallet, RotateCcw, Printer, Star, Users, Moon, MessageSquare, BookUser } from "lucide-react";
 
 const POS_FEATURES = [
   { key: "feature_qr_code", label: "QR Code Payments", desc: "Merchants can display scannable QR codes for customer payments", icon: QrCode },
