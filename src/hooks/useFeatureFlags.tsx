@@ -14,6 +14,11 @@ interface FeatureFlags {
   darkMode: boolean;
   smsReceipt: boolean;
   customerDirectory: boolean;
+  tip: boolean;
+  splitPayment: boolean;
+  offlineMode: boolean;
+  webhooks: boolean;
+  referrals: boolean;
   loaded: boolean;
 }
 
@@ -30,6 +35,11 @@ const defaults: FeatureFlags = {
   darkMode: true,
   smsReceipt: true,
   customerDirectory: true,
+  tip: true,
+  splitPayment: true,
+  offlineMode: true,
+  webhooks: true,
+  referrals: true,
   loaded: false,
 };
 
@@ -60,6 +70,11 @@ export function FeatureFlagsProvider({ children }: { children: React.ReactNode }
           darkMode: map.feature_dark_mode !== "false",
           smsReceipt: map.feature_sms_receipt !== "false",
           customerDirectory: map.feature_customer_directory !== "false",
+          tip: map.feature_tip !== "false",
+          splitPayment: map.feature_split_payment !== "false",
+          offlineMode: map.feature_offline_mode !== "false",
+          webhooks: map.feature_webhooks !== "false",
+          referrals: map.feature_referrals !== "false",
           loaded: true,
         });
       } catch {
