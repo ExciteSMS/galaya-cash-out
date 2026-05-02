@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Save, ToggleLeft, QrCode, Target, Receipt, Bell, Wallet, RotateCcw, Printer, Star, Users, Moon, MessageSquare, BookUser } from "lucide-react";
+import { Save, ToggleLeft, QrCode, Target, Receipt, Bell, Wallet, RotateCcw, Printer, Star, Users, Moon, MessageSquare, BookUser, Coins, Split, WifiOff, Webhook, Gift } from "lucide-react";
 
 const POS_FEATURES = [
   { key: "feature_qr_code", label: "QR Code Payments", desc: "Merchants can display scannable QR codes for customer payments", icon: QrCode },
@@ -19,6 +19,11 @@ const POS_FEATURES = [
   { key: "feature_dark_mode", label: "Dark Mode", desc: "Allow merchants to switch between light and dark themes", icon: Moon },
   { key: "feature_sms_receipt", label: "SMS Receipt", desc: "Send transaction receipt to customer via SMS after payment", icon: MessageSquare },
   { key: "feature_customer_directory", label: "Customer Directory", desc: "Save and manage frequent customers with contact details", icon: BookUser },
+  { key: "feature_tip", label: "Tip / Service Charge", desc: "Add optional tips or service % at checkout, tracked separately", icon: Coins },
+  { key: "feature_split_payment", label: "Split Payment", desc: "Split a single bill across multiple mobile money numbers", icon: Split },
+  { key: "feature_offline_mode", label: "Offline Mode", desc: "Queue sales when offline and auto-sync when connection returns", icon: WifiOff },
+  { key: "feature_webhooks", label: "Webhooks", desc: "Merchants subscribe to event callbacks (payment.success, etc)", icon: Webhook },
+  { key: "feature_referrals", label: "Referral Program", desc: "Merchants earn rewards for referring new merchants", icon: Gift },
 ];
 
 export default function AdminPOSFeatures() {
