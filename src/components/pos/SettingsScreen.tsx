@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Store, CreditCard, Bell, HelpCircle, LogOut, Wallet, Receipt, Target, Star, Users, Moon, BookUser, MessageSquare } from "lucide-react";
+import { Store, CreditCard, Bell, HelpCircle, LogOut, Wallet, Receipt, Target, Star, Users, Moon, BookUser, Coins, Split, WifiOff, Webhook, Gift } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import BusinessProfile from "./BusinessProfile";
@@ -13,9 +13,14 @@ import LoyaltyPoints from "./LoyaltyPoints";
 import StaffAccounts from "./StaffAccounts";
 import ThemeToggle from "./ThemeToggle";
 import CustomerDirectory from "./CustomerDirectory";
+import TipSettings from "./TipSettings";
+import SplitPayment from "./SplitPayment";
+import OfflineQueue from "./OfflineQueue";
+import MerchantWebhooks from "./MerchantWebhooks";
+import ReferralProgram from "./ReferralProgram";
 import { getTransactions, Transaction } from "@/lib/api";
 
-type SettingsView = "main" | "profile" | "payments" | "notifications" | "help" | "payout" | "expenses" | "goal" | "loyalty" | "staff" | "customers";
+type SettingsView = "main" | "profile" | "payments" | "notifications" | "help" | "payout" | "expenses" | "goal" | "loyalty" | "staff" | "customers" | "tip" | "split" | "offline" | "webhooks" | "referrals";
 
 const SettingsScreen = () => {
   const { merchant, logout } = useAuth();
@@ -37,7 +42,11 @@ const SettingsScreen = () => {
   if (view === "loyalty") return <LoyaltyPoints onBack={() => setView("main")} />;
   if (view === "staff") return <StaffAccounts onBack={() => setView("main")} />;
   if (view === "customers") return <CustomerDirectory onBack={() => setView("main")} />;
-
+  if (view === "tip") return <TipSettings onBack={() => setView("main")} />;
+  if (view === "split") return <SplitPayment onBack={() => setView("main")} />;
+  if (view === "offline") return <OfflineQueue onBack={() => setView("main")} />;
+  if (view === "webhooks") return <MerchantWebhooks onBack={() => setView("main")} />;
+  if (view === "referrals") return <ReferralProgram onBack={() => setView("main")} />;
   const allItems = [
     { icon: Store, label: "Business Profile", desc: "Store name, address, tier", key: "profile" as const, always: true },
     { icon: Target, label: "Daily Sales Goal", desc: "Set your daily target", key: "goal" as const, flag: features.salesGoal },
@@ -45,6 +54,11 @@ const SettingsScreen = () => {
     { icon: Star, label: "Loyalty Points", desc: "Reward repeat customers", key: "loyalty" as const, flag: features.loyaltyPoints },
     { icon: Users, label: "Staff Accounts", desc: "Manage cashiers & operators", key: "staff" as const, flag: features.staffAccounts },
     { icon: BookUser, label: "Customer Directory", desc: "Save frequent customers", key: "customers" as const, flag: features.customerDirectory },
+    { icon: Coins, label: "Tip / Service Charge", desc: "Configure tip prompts", key: "tip" as const, flag: features.tip },
+    { icon: Split, label: "Split Payment", desc: "Split a bill across payees", key: "split" as const, flag: features.splitPayment },
+    { icon: WifiOff, label: "Offline Queue", desc: "Sales queued while offline", key: "offline" as const, flag: features.offlineMode },
+    { icon: Webhook, label: "Webhooks", desc: "Receive event notifications", key: "webhooks" as const, flag: features.webhooks },
+    { icon: Gift, label: "Referral Program", desc: "Invite merchants, earn rewards", key: "referrals" as const, flag: features.referrals },
     { icon: CreditCard, label: "Payment Settings", desc: "Mobile money providers", key: "payments" as const, always: true },
     { icon: Wallet, label: "Payout Accounts", desc: "Where you receive earnings", key: "payout" as const, flag: features.withdrawals },
     { icon: Bell, label: "Notifications", desc: "Transaction alerts", key: "notifications" as const, flag: features.notifications },
