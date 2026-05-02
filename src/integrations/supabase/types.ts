@@ -207,6 +207,33 @@ export type Database = {
           },
         ]
       }
+      feature_rollouts: {
+        Row: {
+          feature_key: string
+          id: string
+          notes: string | null
+          rollout_percent: number
+          target_tier_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          feature_key: string
+          id?: string
+          notes?: string | null
+          rollout_percent?: number
+          target_tier_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          feature_key?: string
+          id?: string
+          notes?: string | null
+          rollout_percent?: number
+          target_tier_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       fraud_alerts: {
         Row: {
           alert_type: string
@@ -340,6 +367,39 @@ export type Database = {
           },
         ]
       }
+      merchant_referrals: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          referred_merchant_id: string | null
+          referrer_merchant_id: string
+          reward_amount: number
+          reward_paid: boolean
+          status: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          referred_merchant_id?: string | null
+          referrer_merchant_id: string
+          reward_amount?: number
+          reward_paid?: boolean
+          status?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          referred_merchant_id?: string | null
+          referrer_merchant_id?: string
+          reward_amount?: number
+          reward_paid?: boolean
+          status?: string
+        }
+        Relationships: []
+      }
       merchant_staff: {
         Row: {
           created_at: string
@@ -411,6 +471,42 @@ export type Database = {
         }
         Relationships: []
       }
+      merchant_webhooks: {
+        Row: {
+          created_at: string
+          events: string[]
+          id: string
+          is_active: boolean
+          last_delivery_at: string | null
+          last_status: string | null
+          merchant_id: string
+          secret: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          events?: string[]
+          id?: string
+          is_active?: boolean
+          last_delivery_at?: string | null
+          last_status?: string | null
+          merchant_id: string
+          secret?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          events?: string[]
+          id?: string
+          is_active?: boolean
+          last_delivery_at?: string | null
+          last_status?: string | null
+          merchant_id?: string
+          secret?: string
+          url?: string
+        }
+        Relationships: []
+      }
       merchants: {
         Row: {
           address: string | null
@@ -423,6 +519,9 @@ export type Database = {
           notification_daily_summary: boolean | null
           notification_transactions: boolean | null
           phone_number: string
+          referral_code: string | null
+          risk_band: string
+          risk_score: number
           status: string
           tier_id: string | null
           user_id: string
@@ -438,6 +537,9 @@ export type Database = {
           notification_daily_summary?: boolean | null
           notification_transactions?: boolean | null
           phone_number: string
+          referral_code?: string | null
+          risk_band?: string
+          risk_score?: number
           status?: string
           tier_id?: string | null
           user_id: string
@@ -453,6 +555,9 @@ export type Database = {
           notification_daily_summary?: boolean | null
           notification_transactions?: boolean | null
           phone_number?: string
+          referral_code?: string | null
+          risk_band?: string
+          risk_score?: number
           status?: string
           tier_id?: string | null
           user_id?: string
@@ -556,39 +661,96 @@ export type Database = {
           },
         ]
       }
+      support_tickets: {
+        Row: {
+          admin_reply: string | null
+          assigned_to: string | null
+          created_at: string
+          id: string
+          merchant_id: string
+          message: string
+          priority: string
+          status: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          admin_reply?: string | null
+          assigned_to?: string | null
+          created_at?: string
+          id?: string
+          merchant_id: string
+          message: string
+          priority?: string
+          status?: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          admin_reply?: string | null
+          assigned_to?: string | null
+          created_at?: string
+          id?: string
+          merchant_id?: string
+          message?: string
+          priority?: string
+          status?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           amount: number
+          city: string | null
           created_at: string
           fee: number
           id: string
+          lat: number | null
+          lng: number | null
           merchant_id: string
           phone: string
           provider: string
           reference: string | null
+          split_group_id: string | null
           status: string
+          synced_offline: boolean
+          tip_amount: number
         }
         Insert: {
           amount: number
+          city?: string | null
           created_at?: string
           fee?: number
           id?: string
+          lat?: number | null
+          lng?: number | null
           merchant_id: string
           phone: string
           provider: string
           reference?: string | null
+          split_group_id?: string | null
           status?: string
+          synced_offline?: boolean
+          tip_amount?: number
         }
         Update: {
           amount?: number
+          city?: string | null
           created_at?: string
           fee?: number
           id?: string
+          lat?: number | null
+          lng?: number | null
           merchant_id?: string
           phone?: string
           provider?: string
           reference?: string | null
+          split_group_id?: string | null
           status?: string
+          synced_offline?: boolean
+          tip_amount?: number
         }
         Relationships: [
           {
