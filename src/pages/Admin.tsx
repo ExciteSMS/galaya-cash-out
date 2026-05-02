@@ -24,15 +24,19 @@ import AdminOnboardingPipeline from "@/components/admin/AdminOnboardingPipeline"
 import AdminScheduledReports from "@/components/admin/AdminScheduledReports";
 import AdminActionNotifications from "@/components/admin/AdminActionNotifications";
 import AdminFeeSimulator from "@/components/admin/AdminFeeSimulator";
+import AdminGeoHeatmap from "@/components/admin/AdminGeoHeatmap";
+import AdminRiskScoring from "@/components/admin/AdminRiskScoring";
+import AdminFeatureRollouts from "@/components/admin/AdminFeatureRollouts";
+import AdminSupportInbox from "@/components/admin/AdminSupportInbox";
 import {
   LayoutDashboard, ArrowLeftRight, Users, Settings, LogOut, Shield,
   ArrowDownToLine, ScrollText, RotateCcw, ShieldAlert, BarChart3,
   DollarSign, UserCog, Menu, X, CheckSquare, ToggleLeft,
   Megaphone, FileText, Activity, Radio, KeyRound,
-  GitPullRequest, Clock, Bell, Calculator,
+  GitPullRequest, Clock, Bell, Calculator, Globe, Beaker, Inbox,
 } from "lucide-react";
 
-type AdminTab = "dashboard" | "analytics" | "transactions" | "merchants" | "users" | "approvals" | "charges" | "pos_features" | "broadcast" | "reports" | "health" | "activity_feed" | "permissions" | "refunds" | "fraud" | "disbursements" | "audit" | "settings" | "onboarding" | "scheduled_reports" | "action_notifications" | "fee_simulator";
+type AdminTab = "dashboard" | "analytics" | "transactions" | "merchants" | "users" | "approvals" | "charges" | "pos_features" | "broadcast" | "reports" | "health" | "activity_feed" | "permissions" | "refunds" | "fraud" | "disbursements" | "audit" | "settings" | "onboarding" | "scheduled_reports" | "action_notifications" | "fee_simulator" | "geo" | "risk" | "rollouts" | "support";
 
 const navItems: { tab: AdminTab; label: string; icon: React.ElementType }[] = [
   { tab: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -54,6 +58,10 @@ const navItems: { tab: AdminTab; label: string; icon: React.ElementType }[] = [
   { tab: "permissions", label: "Permissions", icon: KeyRound },
   { tab: "refunds", label: "Refunds", icon: RotateCcw },
   { tab: "fraud", label: "Fraud Alerts", icon: ShieldAlert },
+  { tab: "risk", label: "Risk Scoring", icon: Shield },
+  { tab: "geo", label: "Geo Heatmap", icon: Globe },
+  { tab: "support", label: "Support Inbox", icon: Inbox },
+  { tab: "rollouts", label: "A/B Rollouts", icon: Beaker },
   { tab: "disbursements", label: "Disbursements", icon: ArrowDownToLine },
   { tab: "audit", label: "Audit Log", icon: ScrollText },
   { tab: "settings", label: "Settings", icon: Settings },
@@ -183,6 +191,10 @@ export default function Admin() {
         {activeTab === "scheduled_reports" && <AdminScheduledReports />}
         {activeTab === "action_notifications" && <AdminActionNotifications />}
         {activeTab === "fee_simulator" && <AdminFeeSimulator />}
+        {activeTab === "geo" && <AdminGeoHeatmap />}
+        {activeTab === "risk" && <AdminRiskScoring />}
+        {activeTab === "rollouts" && <AdminFeatureRollouts />}
+        {activeTab === "support" && <AdminSupportInbox />}
       </main>
     </div>
   );
