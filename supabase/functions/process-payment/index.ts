@@ -18,7 +18,8 @@ function calculateFee(amount: number): number {
 }
 
 function generateRef(): string {
-  return "GAL" + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase();
+  // Short alphanumeric ref (Lipila examples use ~12 char refs)
+  return (Date.now().toString(36) + Math.random().toString(36).substring(2, 8)).toLowerCase().substring(0, 16);
 }
 
 function formatPhoneLocal(phone: string): string {
@@ -35,7 +36,7 @@ function formatPhoneInternational(phone: string): string {
   return "260" + phone;
 }
 
-async function getActiveGateway(supabase: any): Promise<{ gateway: string; credentials: Record<string, string> }> {
+async function getActiveGateway(_supabase: any): Promise<{ gateway: string; credentials: Record<string, string> }> {
   const adminClient = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -49,13 +50,15 @@ async function getActiveGateway(supabase: any): Promise<{ gateway: string; crede
   const map: Record<string, string> = {};
   settings?.forEach((s: any) => (map[s.key] = s.value));
 
-  // Prefer Lipila if enabled
-  if (map.gateway_lipila_enabled === "true" && map.lipila_api_key) {
-    return { gateway: "lipila", credentials: { api_key: map.lipila_api_key } };
+  // Lipila is the default and primary gateway. Use it whenever a key is available
+  // (unless explicitly disabled in settings).
+  const lipilaKey = map.lipila_api_key || Deno.env.get("LIPILA_API_KEY") || "";
+  if (map.gateway_lipila_enabled !== "false" && lipilaKey) {
+    return { gateway: "lipila", credentials: { api_key: lipilaKey } };
   }
 
-  // Fallback to MoneyUnify
-  if (map.gateway_moneyunify_enabled !== "false") {
+  // Fallback to MoneyUnify only if Lipila is unavailable AND MoneyUnify is enabled.
+  if (map.gateway_moneyunify_enabled === "true") {
     const authId = map.moneyunify_auth_id || Deno.env.get("MONEYUNIFY_AUTH_ID") || "";
     if (authId) {
       return { gateway: "moneyunify", credentials: { auth_id: authId } };
@@ -100,35 +103,57 @@ async function processWithLipila(phone: string, amount: number, apiKey: string, 
 
   const body = {
     referenceId: reference,
-    amount: amount,
-    narration: "Payment collection",
+    amount: Number(amount),
+    narration: "Galaya payment",
     accountNumber: formattedPhone,
     currency: "ZMW",
   };
 
-  console.log("Calling Lipila MoMo Collection:", { phone: formattedPhone, amount });
+  console.log("Calling Lipila MoMo Collection:", { phone: formattedPhone, amount, reference });
 
-  const response = await fetch(LIPILA_API, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Accept": "application/json",
-      "x-api-key": apiKey,
-    },
-    body: JSON.stringify(body),
-  });
+  let response: Response;
+  try {
+    response = await fetch(LIPILA_API, {
+      method: "POST",
+      headers: {
+        "accept": "application/json",
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+      },
+      body: JSON.stringify(body),
+    });
+  } catch (e) {
+    console.error("Lipila network error:", e);
+    return { success: false, error: "Could not reach Lipila gateway" };
+  }
 
-  const data = await response.json();
-  console.log("Lipila response:", JSON.stringify(data));
+  const rawText = await response.text();
+  console.log("Lipila raw response:", response.status, rawText);
 
-  if (data.status === "Failed" || response.status >= 400) {
-    return { success: false, error: data.message || "Payment request failed" };
+  let data: any = {};
+  if (rawText) {
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      data = { message: rawText };
+    }
+  }
+
+  if (response.status >= 400) {
+    return {
+      success: false,
+      error: data?.message || data?.error || `Lipila error (${response.status})`,
+    };
+  }
+
+  if (data?.status && String(data.status).toLowerCase() === "failed") {
+    return { success: false, error: data.message || "Payment failed" };
   }
 
   return {
     success: true,
-    transaction_id: data.identifier || data.referenceId,
-    status: data.status || "Pending",
+    transaction_id: data?.identifier || data?.referenceId || reference,
+    status: data?.status || "Pending",
   };
 }
 
