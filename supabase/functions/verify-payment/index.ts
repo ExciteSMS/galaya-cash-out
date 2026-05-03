@@ -7,6 +7,8 @@ const corsHeaders = {
 };
 
 const MONEYUNIFY_VERIFY_API = "https://api.moneyunify.one/payments/verify";
+// Lipila PRODUCTION status endpoint (live keys). Sandbox is https://api.lipila.dev
+const LIPILA_STATUS_API = "https://blz.lipila.io/api/v1/collections/check-status";
 
 async function getActiveGateway(): Promise<{ gateway: string; credentials: Record<string, string> }> {
   const adminClient = createClient(
@@ -77,17 +79,70 @@ Deno.serve(async (req: Request) => {
     const { gateway, credentials } = await getActiveGateway();
 
     if (gateway === "lipila") {
-      // Lipila uses callback-based verification — check DB status directly
-      // The transaction status is returned in the initial response
-      // For polling, we check if the DB has been updated via callback
+      // First check DB (callback may have updated it already)
+      let dbStatus: string = "pending";
       if (db_transaction_id) {
         const { data: txData } = await supabase
           .from("transactions")
-          .select("status")
+          .select("status, reference")
           .eq("id", db_transaction_id)
           .single();
+        dbStatus = txData?.status || "pending";
 
-        const dbStatus = txData?.status || "pending";
+        // If still pending, actively poll Lipila status endpoint
+        if (dbStatus === "pending" && credentials.api_key) {
+          const ref = txData?.reference || transaction_id;
+          try {
+            const url = `${LIPILA_STATUS_API}?referenceId=${encodeURIComponent(ref)}`;
+            const r = await fetch(url, {
+              method: "GET",
+              headers: { "accept": "application/json", "x-api-key": credentials.api_key },
+            });
+            const raw = await r.text();
+            console.log("Lipila status poll:", r.status, raw);
+            let d: any = {};
+            try { d = JSON.parse(raw); } catch { d = { message: raw }; }
+            const s = String(d?.status || "").toLowerCase();
+            if (s === "successful" || s === "success" || s === "completed") {
+              dbStatus = "success";
+            } else if (s === "failed" || s === "rejected" || s === "cancelled") {
+              dbStatus = "failed";
+            }
+
+            // Persist if status resolved
+            if (dbStatus === "success" || dbStatus === "failed") {
+              await supabase.from("transactions").update({ status: dbStatus }).eq("id", db_transaction_id);
+
+              if (dbStatus === "success") {
+                try {
+                  const { data: txRow } = await supabase
+                    .from("transactions")
+                    .select("*, merchants(name, phone_number)")
+                    .eq("id", db_transaction_id)
+                    .single();
+                  if (txRow) {
+                    const m = txRow.merchants as any;
+                    fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-sms`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        merchant_phone: m?.phone_number,
+                        merchant_name: m?.name,
+                        customer_phone: txRow.phone,
+                        amount: txRow.amount,
+                        reference: txRow.reference,
+                        provider: txRow.provider,
+                      }),
+                    }).catch((e) => console.error("SMS error:", e));
+                  }
+                } catch (e) { console.error("SMS lookup error:", e); }
+              }
+            }
+          } catch (e) {
+            console.error("Lipila status poll error:", e);
+          }
+        }
+
         return new Response(JSON.stringify({
           status: dbStatus === "success" ? "success" : dbStatus === "failed" ? "failed" : "pending",
           moneyunify_status: dbStatus,
