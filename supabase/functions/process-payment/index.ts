@@ -18,7 +18,8 @@ function calculateFee(amount: number): number {
 }
 
 function generateRef(): string {
-  return "GAL" + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase();
+  // Short alphanumeric ref (Lipila examples use ~12 char refs)
+  return (Date.now().toString(36) + Math.random().toString(36).substring(2, 8)).toLowerCase().substring(0, 16);
 }
 
 function formatPhoneLocal(phone: string): string {
