@@ -7,6 +7,8 @@ const corsHeaders = {
 };
 
 const MONEYUNIFY_VERIFY_API = "https://api.moneyunify.one/payments/verify";
+// Lipila PRODUCTION status endpoint (live keys). Sandbox is https://api.lipila.dev
+const LIPILA_STATUS_API = "https://blz.lipila.io/api/v1/collections/check-status";
 
 async function getActiveGateway(): Promise<{ gateway: string; credentials: Record<string, string> }> {
   const adminClient = createClient(
