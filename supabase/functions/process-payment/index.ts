@@ -7,7 +7,8 @@ const corsHeaders = {
 };
 
 const MONEYUNIFY_API = "https://api.moneyunify.one/payments/request";
-const LIPILA_API = "https://api.lipila.dev/api/v1/collections/mobile-money";
+// Lipila PRODUCTION endpoint (live keys). Sandbox is https://api.lipila.dev
+const LIPILA_API = "https://blz.lipila.io/api/v1/collections/mobile-money";
 
 function calculateFee(amount: number): number {
   if (amount <= 50) return 1;
