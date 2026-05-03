@@ -103,35 +103,57 @@ async function processWithLipila(phone: string, amount: number, apiKey: string, 
 
   const body = {
     referenceId: reference,
-    amount: amount,
-    narration: "Payment collection",
+    amount: Number(amount),
+    narration: "Galaya payment",
     accountNumber: formattedPhone,
     currency: "ZMW",
   };
 
-  console.log("Calling Lipila MoMo Collection:", { phone: formattedPhone, amount });
+  console.log("Calling Lipila MoMo Collection:", { phone: formattedPhone, amount, reference });
 
-  const response = await fetch(LIPILA_API, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Accept": "application/json",
-      "x-api-key": apiKey,
-    },
-    body: JSON.stringify(body),
-  });
+  let response: Response;
+  try {
+    response = await fetch(LIPILA_API, {
+      method: "POST",
+      headers: {
+        "accept": "application/json",
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+      },
+      body: JSON.stringify(body),
+    });
+  } catch (e) {
+    console.error("Lipila network error:", e);
+    return { success: false, error: "Could not reach Lipila gateway" };
+  }
 
-  const data = await response.json();
-  console.log("Lipila response:", JSON.stringify(data));
+  const rawText = await response.text();
+  console.log("Lipila raw response:", response.status, rawText);
 
-  if (data.status === "Failed" || response.status >= 400) {
-    return { success: false, error: data.message || "Payment request failed" };
+  let data: any = {};
+  if (rawText) {
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      data = { message: rawText };
+    }
+  }
+
+  if (response.status >= 400) {
+    return {
+      success: false,
+      error: data?.message || data?.error || `Lipila error (${response.status})`,
+    };
+  }
+
+  if (data?.status && String(data.status).toLowerCase() === "failed") {
+    return { success: false, error: data.message || "Payment failed" };
   }
 
   return {
     success: true,
-    transaction_id: data.identifier || data.referenceId,
-    status: data.status || "Pending",
+    transaction_id: data?.identifier || data?.referenceId || reference,
+    status: data?.status || "Pending",
   };
 }
 
