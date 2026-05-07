@@ -180,6 +180,7 @@ export default function Admin() {
         {activeTab === "charges" && <AdminCharges />}
         {activeTab === "pos_features" && <AdminPOSFeatures />}
         {activeTab === "broadcast" && <AdminBroadcast />}
+        {activeTab === "sms" && <AdminCustomSMS />}
         {activeTab === "reports" && <AdminRevenueReports />}
         {activeTab === "health" && <AdminSystemHealth />}
         {activeTab === "activity_feed" && <AdminActivityFeed />}
