@@ -661,6 +661,45 @@ export type Database = {
           },
         ]
       }
+      sms_log: {
+        Row: {
+          category: string
+          created_at: string
+          error: string | null
+          id: string
+          merchant_id: string | null
+          message: string
+          recipient: string
+          sender_id: string
+          sent_by: string | null
+          status: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          merchant_id?: string | null
+          message: string
+          recipient: string
+          sender_id?: string
+          sent_by?: string | null
+          status?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          merchant_id?: string | null
+          message?: string
+          recipient?: string
+          sender_id?: string
+          sent_by?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       support_tickets: {
         Row: {
           admin_reply: string | null
