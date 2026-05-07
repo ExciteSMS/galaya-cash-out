@@ -28,6 +28,7 @@ import AdminGeoHeatmap from "@/components/admin/AdminGeoHeatmap";
 import AdminRiskScoring from "@/components/admin/AdminRiskScoring";
 import AdminFeatureRollouts from "@/components/admin/AdminFeatureRollouts";
 import AdminSupportInbox from "@/components/admin/AdminSupportInbox";
+import AdminCustomSMS from "@/components/admin/AdminCustomSMS";
 import {
   LayoutDashboard, ArrowLeftRight, Users, Settings, LogOut, Shield,
   ArrowDownToLine, ScrollText, RotateCcw, ShieldAlert, BarChart3,
