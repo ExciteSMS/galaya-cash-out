@@ -129,20 +129,20 @@ Deno.serve(async (req: Request) => {
         });
       }
 
-      let recipients: { phone: string; merchant_id?: string | null }[] = [];
+      let recipients: { phone: string; merchant_id?: string | null; name?: string | null }[] = [];
 
       if (Array.isArray(body.merchant_ids) && body.merchant_ids.length > 0) {
         const { data: ms } = await adminClient
           .from("merchants")
-          .select("id, phone_number")
+          .select("id, name, phone_number")
           .in("id", body.merchant_ids);
-        recipients = (ms || []).map((m: any) => ({ phone: m.phone_number, merchant_id: m.id }));
+        recipients = (ms || []).map((m: any) => ({ phone: m.phone_number, merchant_id: m.id, name: m.name }));
       } else if (body.target === "all_merchants") {
         const { data: ms } = await adminClient
           .from("merchants")
-          .select("id, phone_number")
+          .select("id, name, phone_number")
           .eq("status", "active");
-        recipients = (ms || []).map((m: any) => ({ phone: m.phone_number, merchant_id: m.id }));
+        recipients = (ms || []).map((m: any) => ({ phone: m.phone_number, merchant_id: m.id, name: m.name }));
       } else if (Array.isArray(body.recipients)) {
         recipients = body.recipients.map((p: string) => ({ phone: p }));
       }
