@@ -48,6 +48,15 @@ export default function AdminCustomSMS() {
   const [sending, setSending] = useState(false);
   const [history, setHistory] = useState<SmsLog[]>([]);
   const [search, setSearch] = useState("");
+  const [vars, setVars] = useState<Record<string, string>>({});
+
+  // Detect {placeholder} tokens in the message
+  const placeholders = Array.from(
+    new Set((message.match(/\{(\w+)\}/g) || []).map((m) => m.slice(1, -1)))
+  );
+
+  const fillPlaceholders = (text: string) =>
+    text.replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? "").trim() || `{${k}}`);
 
   useEffect(() => {
     loadMerchants();
@@ -87,7 +96,14 @@ export default function AdminCustomSMS() {
       return;
     }
 
-    const payload: any = { mode: "custom", message, category };
+    // Substitute placeholder tokens like {amount} {reference}
+    const finalMessage = fillPlaceholders(message);
+    if (/\{\w+\}/.test(finalMessage)) {
+      toast.error("Fill in all placeholder values before sending");
+      return;
+    }
+
+    const payload: any = { mode: "custom", message: finalMessage, category };
 
     if (mode === "all_merchants") {
       payload.target = "all_merchants";
@@ -118,6 +134,7 @@ export default function AdminCustomSMS() {
       setMessage("");
       setSelectedIds([]);
       setNumbers("");
+      setVars({});
       loadHistory();
     } catch (err: any) {
       toast.error(err.message || "Failed to send SMS");
@@ -262,6 +279,27 @@ export default function AdminCustomSMS() {
             onChange={(e) => setMessage(e.target.value)}
             rows={5}
           />
+
+          {placeholders.length > 0 && (
+            <div className="space-y-2 p-3 rounded-md border border-dashed bg-muted/30">
+              <Label className="text-xs">Fill in placeholders</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {placeholders.map((p) => (
+                  <div key={p} className="space-y-1">
+                    <Label className="text-[11px] font-mono text-muted-foreground">{`{${p}}`}</Label>
+                    <Input
+                      value={vars[p] || ""}
+                      onChange={(e) => setVars((v) => ({ ...v, [p]: e.target.value }))}
+                      placeholder={`Value for ${p}`}
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="text-xs text-muted-foreground pt-1">
+                Preview: <span className="font-mono">{fillPlaceholders(message)}</span>
+              </div>
+            </div>
+          )}
 
           <Button onClick={handleSend} disabled={sending} className="w-full sm:w-auto">
             <Send className="h-4 w-4 mr-2" />
