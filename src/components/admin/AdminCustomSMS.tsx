@@ -134,6 +134,7 @@ export default function AdminCustomSMS() {
       setMessage("");
       setSelectedIds([]);
       setNumbers("");
+      setVars({});
       loadHistory();
     } catch (err: any) {
       toast.error(err.message || "Failed to send SMS");
