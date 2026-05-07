@@ -48,6 +48,15 @@ export default function AdminCustomSMS() {
   const [sending, setSending] = useState(false);
   const [history, setHistory] = useState<SmsLog[]>([]);
   const [search, setSearch] = useState("");
+  const [vars, setVars] = useState<Record<string, string>>({});
+
+  // Detect {placeholder} tokens in the message
+  const placeholders = Array.from(
+    new Set((message.match(/\{(\w+)\}/g) || []).map((m) => m.slice(1, -1)))
+  );
+
+  const fillPlaceholders = (text: string) =>
+    text.replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? "").trim() || `{${k}}`);
 
   useEffect(() => {
     loadMerchants();
