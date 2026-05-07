@@ -50,10 +50,12 @@ export default function AdminCustomSMS() {
   const [search, setSearch] = useState("");
   const [vars, setVars] = useState<Record<string, string>>({});
 
-  // Detect {placeholder} tokens in the message
+  // Auto-filled by the server from the merchant's latest transaction / profile
+  const AUTO_TOKENS = new Set(["amount", "reference", "merchant", "date"]);
+  // Detect {placeholder} tokens that the user must fill manually
   const placeholders = Array.from(
     new Set((message.match(/\{(\w+)\}/g) || []).map((m) => m.slice(1, -1)))
-  );
+  ).filter((k) => !AUTO_TOKENS.has(k));
 
   const fillPlaceholders = (text: string) =>
     text.replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? "").trim() || `{${k}}`);
@@ -96,10 +98,14 @@ export default function AdminCustomSMS() {
       return;
     }
 
-    // Substitute placeholder tokens like {amount} {reference}
+    // Auto-filled tokens (resolved server-side from DB)
+    const AUTO_TOKENS = new Set(["amount", "reference", "merchant", "date"]);
     const finalMessage = fillPlaceholders(message);
-    if (/\{\w+\}/.test(finalMessage)) {
-      toast.error("Fill in all placeholder values before sending");
+    const remaining = (finalMessage.match(/\{(\w+)\}/g) || [])
+      .map((m) => m.slice(1, -1))
+      .filter((k) => !AUTO_TOKENS.has(k));
+    if (remaining.length > 0) {
+      toast.error(`Fill in placeholder values: ${remaining.join(", ")}`);
       return;
     }
 
