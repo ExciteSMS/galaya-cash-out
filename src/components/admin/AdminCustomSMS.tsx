@@ -280,6 +280,27 @@ export default function AdminCustomSMS() {
             rows={5}
           />
 
+          {placeholders.length > 0 && (
+            <div className="space-y-2 p-3 rounded-md border border-dashed bg-muted/30">
+              <Label className="text-xs">Fill in placeholders</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {placeholders.map((p) => (
+                  <div key={p} className="space-y-1">
+                    <Label className="text-[11px] font-mono text-muted-foreground">{`{${p}}`}</Label>
+                    <Input
+                      value={vars[p] || ""}
+                      onChange={(e) => setVars((v) => ({ ...v, [p]: e.target.value }))}
+                      placeholder={`Value for ${p}`}
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="text-xs text-muted-foreground pt-1">
+                Preview: <span className="font-mono">{fillPlaceholders(message)}</span>
+              </div>
+            </div>
+          )}
+
           <Button onClick={handleSend} disabled={sending} className="w-full sm:w-auto">
             <Send className="h-4 w-4 mr-2" />
             {sending ? "Sending..." : "Send SMS"}
