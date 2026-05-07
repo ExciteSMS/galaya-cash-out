@@ -96,7 +96,14 @@ export default function AdminCustomSMS() {
       return;
     }
 
-    const payload: any = { mode: "custom", message, category };
+    // Substitute placeholder tokens like {amount} {reference}
+    const finalMessage = fillPlaceholders(message);
+    if (/\{\w+\}/.test(finalMessage)) {
+      toast.error("Fill in all placeholder values before sending");
+      return;
+    }
+
+    const payload: any = { mode: "custom", message: finalMessage, category };
 
     if (mode === "all_merchants") {
       payload.target = "all_merchants";
