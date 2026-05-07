@@ -34,10 +34,10 @@ import {
   ArrowDownToLine, ScrollText, RotateCcw, ShieldAlert, BarChart3,
   DollarSign, UserCog, Menu, X, CheckSquare, ToggleLeft,
   Megaphone, FileText, Activity, Radio, KeyRound,
-  GitPullRequest, Clock, Bell, Calculator, Globe, Beaker, Inbox,
+  GitPullRequest, Clock, Bell, Calculator, Globe, Beaker, Inbox, MessageSquare,
 } from "lucide-react";
 
-type AdminTab = "dashboard" | "analytics" | "transactions" | "merchants" | "users" | "approvals" | "charges" | "pos_features" | "broadcast" | "reports" | "health" | "activity_feed" | "permissions" | "refunds" | "fraud" | "disbursements" | "audit" | "settings" | "onboarding" | "scheduled_reports" | "action_notifications" | "fee_simulator" | "geo" | "risk" | "rollouts" | "support";
+type AdminTab = "dashboard" | "analytics" | "transactions" | "merchants" | "users" | "approvals" | "charges" | "pos_features" | "broadcast" | "sms" | "reports" | "health" | "activity_feed" | "permissions" | "refunds" | "fraud" | "disbursements" | "audit" | "settings" | "onboarding" | "scheduled_reports" | "action_notifications" | "fee_simulator" | "geo" | "risk" | "rollouts" | "support";
 
 const navItems: { tab: AdminTab; label: string; icon: React.ElementType }[] = [
   { tab: "dashboard", label: "Dashboard", icon: LayoutDashboard },
