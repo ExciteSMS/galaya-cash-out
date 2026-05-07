@@ -159,13 +159,50 @@ Deno.serve(async (req: Request) => {
       let sent = 0;
       let failed = 0;
       const logs: any[] = [];
+
+      // Helper: fetch latest successful transaction for a merchant for {amount}/{reference}
+      const txCache = new Map<string, { amount: any; reference: any; created_at: string } | null>();
+      const getLatestTx = async (mid: string) => {
+        if (txCache.has(mid)) return txCache.get(mid)!;
+        const { data } = await adminClient
+          .from("transactions")
+          .select("amount, reference, created_at")
+          .eq("merchant_id", mid)
+          .eq("status", "success")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        txCache.set(mid, data || null);
+        return data || null;
+      };
+
+      const today = new Date().toISOString().slice(0, 10);
+
       for (const r of recipients) {
         if (!r.phone) continue;
-        const ok = await sendSms(smsConfig.apiKey, smsConfig.senderId, r.phone, message);
+
+        // Auto-fill placeholders from DB per recipient
+        let personalized = message;
+        if (/\{(amount|reference|merchant|date)\}/.test(personalized)) {
+          let amount: any = "";
+          let reference: any = "";
+          if (r.merchant_id) {
+            const tx = await getLatestTx(r.merchant_id);
+            amount = tx?.amount ?? "";
+            reference = tx?.reference ?? "";
+          }
+          personalized = personalized
+            .replace(/\{amount\}/g, String(amount))
+            .replace(/\{reference\}/g, String(reference))
+            .replace(/\{merchant\}/g, r.name || "")
+            .replace(/\{date\}/g, today);
+        }
+
+        const ok = await sendSms(smsConfig.apiKey, smsConfig.senderId, r.phone, personalized);
         if (ok) sent++; else failed++;
         logs.push({
           recipient: r.phone,
-          message,
+          message: personalized,
           sender_id: smsConfig.senderId,
           category,
           status: ok ? "sent" : "failed",
