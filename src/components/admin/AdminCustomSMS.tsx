@@ -50,10 +50,12 @@ export default function AdminCustomSMS() {
   const [search, setSearch] = useState("");
   const [vars, setVars] = useState<Record<string, string>>({});
 
-  // Detect {placeholder} tokens in the message
+  // Auto-filled by the server from the merchant's latest transaction / profile
+  const AUTO_TOKENS = new Set(["amount", "reference", "merchant", "date"]);
+  // Detect {placeholder} tokens that the user must fill manually
   const placeholders = Array.from(
     new Set((message.match(/\{(\w+)\}/g) || []).map((m) => m.slice(1, -1)))
-  );
+  ).filter((k) => !AUTO_TOKENS.has(k));
 
   const fillPlaceholders = (text: string) =>
     text.replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? "").trim() || `{${k}}`);
