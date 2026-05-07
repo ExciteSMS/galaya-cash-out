@@ -52,6 +52,7 @@ const navItems: { tab: AdminTab; label: string; icon: React.ElementType }[] = [
   { tab: "fee_simulator", label: "Fee Simulator", icon: Calculator },
   { tab: "pos_features", label: "POS Features", icon: ToggleLeft },
   { tab: "broadcast", label: "Broadcast", icon: Megaphone },
+  { tab: "sms", label: "Custom SMS", icon: MessageSquare },
   { tab: "reports", label: "Revenue Reports", icon: FileText },
   { tab: "scheduled_reports", label: "Auto Reports", icon: Clock },
   { tab: "health", label: "System Health", icon: Activity },
