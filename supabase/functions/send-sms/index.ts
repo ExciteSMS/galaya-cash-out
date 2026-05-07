@@ -87,6 +87,102 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    const body = await req.json();
+
+    // ---- Admin custom SMS mode ----
+    // Payload: { mode: "custom", recipients: string[], message: string, category?: string, merchant_ids?: string[] }
+    if (body.mode === "custom") {
+      const adminClient = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      );
+
+      // Verify caller is admin
+      const authHeader = req.headers.get("Authorization") || "";
+      const token = authHeader.replace("Bearer ", "");
+      const { data: userRes } = await adminClient.auth.getUser(token);
+      const userId = userRes?.user?.id;
+      if (!userId) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { data: roleRow } = await adminClient
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .eq("role", "admin")
+        .maybeSingle();
+      if (!roleRow) {
+        return new Response(JSON.stringify({ error: "Admin only" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const smsConfig = await getSmsSettings();
+      if (!smsConfig.apiKey) {
+        return new Response(JSON.stringify({ error: "SMS API key not configured" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      let recipients: { phone: string; merchant_id?: string | null }[] = [];
+
+      if (Array.isArray(body.merchant_ids) && body.merchant_ids.length > 0) {
+        const { data: ms } = await adminClient
+          .from("merchants")
+          .select("id, phone_number")
+          .in("id", body.merchant_ids);
+        recipients = (ms || []).map((m: any) => ({ phone: m.phone_number, merchant_id: m.id }));
+      } else if (body.target === "all_merchants") {
+        const { data: ms } = await adminClient
+          .from("merchants")
+          .select("id, phone_number")
+          .eq("status", "active");
+        recipients = (ms || []).map((m: any) => ({ phone: m.phone_number, merchant_id: m.id }));
+      } else if (Array.isArray(body.recipients)) {
+        recipients = body.recipients.map((p: string) => ({ phone: p }));
+      }
+
+      const message: string = body.message || "";
+      const category: string = body.category || "custom";
+      if (!message.trim() || recipients.length === 0) {
+        return new Response(JSON.stringify({ error: "message and recipients required" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      let sent = 0;
+      let failed = 0;
+      const logs: any[] = [];
+      for (const r of recipients) {
+        if (!r.phone) continue;
+        const ok = await sendSms(smsConfig.apiKey, smsConfig.senderId, r.phone, message);
+        if (ok) sent++; else failed++;
+        logs.push({
+          recipient: r.phone,
+          message,
+          sender_id: smsConfig.senderId,
+          category,
+          status: ok ? "sent" : "failed",
+          sent_by: userId,
+          merchant_id: r.merchant_id ?? null,
+        });
+      }
+      if (logs.length > 0) {
+        await adminClient.from("sms_log").insert(logs);
+      }
+
+      return new Response(JSON.stringify({ sent, failed, total: recipients.length }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const {
       merchant_phone,
       merchant_name,
@@ -94,7 +190,7 @@ Deno.serve(async (req: Request) => {
       amount,
       reference,
       provider,
-    } = await req.json();
+    } = body;
 
     const smsConfig = await getSmsSettings();
 

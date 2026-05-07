@@ -28,15 +28,16 @@ import AdminGeoHeatmap from "@/components/admin/AdminGeoHeatmap";
 import AdminRiskScoring from "@/components/admin/AdminRiskScoring";
 import AdminFeatureRollouts from "@/components/admin/AdminFeatureRollouts";
 import AdminSupportInbox from "@/components/admin/AdminSupportInbox";
+import AdminCustomSMS from "@/components/admin/AdminCustomSMS";
 import {
   LayoutDashboard, ArrowLeftRight, Users, Settings, LogOut, Shield,
   ArrowDownToLine, ScrollText, RotateCcw, ShieldAlert, BarChart3,
   DollarSign, UserCog, Menu, X, CheckSquare, ToggleLeft,
   Megaphone, FileText, Activity, Radio, KeyRound,
-  GitPullRequest, Clock, Bell, Calculator, Globe, Beaker, Inbox,
+  GitPullRequest, Clock, Bell, Calculator, Globe, Beaker, Inbox, MessageSquare,
 } from "lucide-react";
 
-type AdminTab = "dashboard" | "analytics" | "transactions" | "merchants" | "users" | "approvals" | "charges" | "pos_features" | "broadcast" | "reports" | "health" | "activity_feed" | "permissions" | "refunds" | "fraud" | "disbursements" | "audit" | "settings" | "onboarding" | "scheduled_reports" | "action_notifications" | "fee_simulator" | "geo" | "risk" | "rollouts" | "support";
+type AdminTab = "dashboard" | "analytics" | "transactions" | "merchants" | "users" | "approvals" | "charges" | "pos_features" | "broadcast" | "sms" | "reports" | "health" | "activity_feed" | "permissions" | "refunds" | "fraud" | "disbursements" | "audit" | "settings" | "onboarding" | "scheduled_reports" | "action_notifications" | "fee_simulator" | "geo" | "risk" | "rollouts" | "support";
 
 const navItems: { tab: AdminTab; label: string; icon: React.ElementType }[] = [
   { tab: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -51,6 +52,7 @@ const navItems: { tab: AdminTab; label: string; icon: React.ElementType }[] = [
   { tab: "fee_simulator", label: "Fee Simulator", icon: Calculator },
   { tab: "pos_features", label: "POS Features", icon: ToggleLeft },
   { tab: "broadcast", label: "Broadcast", icon: Megaphone },
+  { tab: "sms", label: "Custom SMS", icon: MessageSquare },
   { tab: "reports", label: "Revenue Reports", icon: FileText },
   { tab: "scheduled_reports", label: "Auto Reports", icon: Clock },
   { tab: "health", label: "System Health", icon: Activity },
@@ -178,6 +180,7 @@ export default function Admin() {
         {activeTab === "charges" && <AdminCharges />}
         {activeTab === "pos_features" && <AdminPOSFeatures />}
         {activeTab === "broadcast" && <AdminBroadcast />}
+        {activeTab === "sms" && <AdminCustomSMS />}
         {activeTab === "reports" && <AdminRevenueReports />}
         {activeTab === "health" && <AdminSystemHealth />}
         {activeTab === "activity_feed" && <AdminActivityFeed />}
