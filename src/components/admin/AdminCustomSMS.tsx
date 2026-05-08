@@ -79,7 +79,72 @@ export default function AdminCustomSMS() {
   useEffect(() => {
     loadMerchants();
     loadHistory();
+    loadTemplates();
   }, []);
+
+  const loadTemplates = async () => {
+    const { data } = await (supabase as any)
+      .from("sms_templates")
+      .select("*")
+      .order("updated_at", { ascending: false });
+    setSavedTemplates(data || []);
+  };
+
+  const openSaveTemplate = () => {
+    if (!message.trim()) {
+      toast.error("Write a message first");
+      return;
+    }
+    setEditingTplId(null);
+    setTplName("");
+    setTplDialogOpen(true);
+  };
+
+  const editTemplate = (t: SmsTemplate) => {
+    setEditingTplId(t.id);
+    setTplName(t.name);
+    setMessage(t.message);
+    setCategory(t.category);
+    setTplDialogOpen(true);
+  };
+
+  const saveTemplate = async () => {
+    if (!tplName.trim() || !message.trim()) {
+      toast.error("Name and message are required");
+      return;
+    }
+    const payload = { name: tplName.trim(), category, message, is_active: true };
+    let error;
+    if (editingTplId) {
+      ({ error } = await (supabase as any).from("sms_templates").update(payload).eq("id", editingTplId));
+    } else {
+      ({ error } = await (supabase as any).from("sms_templates").insert(payload));
+    }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(editingTplId ? "Template updated" : "Template saved");
+    setTplDialogOpen(false);
+    setEditingTplId(null);
+    setTplName("");
+    loadTemplates();
+  };
+
+  const useTemplate = (t: SmsTemplate) => {
+    setMessage(t.message);
+    setCategory(t.category);
+    setVars({});
+    toast.success(`Loaded "${t.name}"`);
+  };
+
+  const deleteTemplate = async (id: string) => {
+    if (!confirm("Delete this template?")) return;
+    const { error } = await (supabase as any).from("sms_templates").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Deleted");
+    loadTemplates();
+  };
 
   const loadMerchants = async () => {
     const { data } = await supabase
