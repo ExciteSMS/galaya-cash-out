@@ -15,6 +15,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 
+type Mode = "all_merchants" | "select_merchants" | "custom_numbers";
 
 interface SmsTemplate {
   id: string;
