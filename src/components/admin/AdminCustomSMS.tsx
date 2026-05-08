@@ -9,10 +9,22 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { MessageSquare, Send, Clock, Users, Phone } from "lucide-react";
+import { MessageSquare, Send, Clock, Users, Phone, BookmarkPlus, Trash2, FileText, Pencil } from "lucide-react";
 import { format } from "date-fns";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
+} from "@/components/ui/dialog";
 
 type Mode = "all_merchants" | "select_merchants" | "custom_numbers";
+
+interface SmsTemplate {
+  id: string;
+  name: string;
+  category: string;
+  message: string;
+  is_active: boolean;
+  updated_at: string;
+}
 
 interface Merchant {
   id: string;
@@ -49,6 +61,10 @@ export default function AdminCustomSMS() {
   const [history, setHistory] = useState<SmsLog[]>([]);
   const [search, setSearch] = useState("");
   const [vars, setVars] = useState<Record<string, string>>({});
+  const [savedTemplates, setSavedTemplates] = useState<SmsTemplate[]>([]);
+  const [tplDialogOpen, setTplDialogOpen] = useState(false);
+  const [tplName, setTplName] = useState("");
+  const [editingTplId, setEditingTplId] = useState<string | null>(null);
 
   // Auto-filled by the server from the merchant's latest transaction / profile
   const AUTO_TOKENS = new Set(["amount", "reference", "merchant", "date"]);
@@ -63,7 +79,72 @@ export default function AdminCustomSMS() {
   useEffect(() => {
     loadMerchants();
     loadHistory();
+    loadTemplates();
   }, []);
+
+  const loadTemplates = async () => {
+    const { data } = await (supabase as any)
+      .from("sms_templates")
+      .select("*")
+      .order("updated_at", { ascending: false });
+    setSavedTemplates(data || []);
+  };
+
+  const openSaveTemplate = () => {
+    if (!message.trim()) {
+      toast.error("Write a message first");
+      return;
+    }
+    setEditingTplId(null);
+    setTplName("");
+    setTplDialogOpen(true);
+  };
+
+  const editTemplate = (t: SmsTemplate) => {
+    setEditingTplId(t.id);
+    setTplName(t.name);
+    setMessage(t.message);
+    setCategory(t.category);
+    setTplDialogOpen(true);
+  };
+
+  const saveTemplate = async () => {
+    if (!tplName.trim() || !message.trim()) {
+      toast.error("Name and message are required");
+      return;
+    }
+    const payload = { name: tplName.trim(), category, message, is_active: true };
+    let error;
+    if (editingTplId) {
+      ({ error } = await (supabase as any).from("sms_templates").update(payload).eq("id", editingTplId));
+    } else {
+      ({ error } = await (supabase as any).from("sms_templates").insert(payload));
+    }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(editingTplId ? "Template updated" : "Template saved");
+    setTplDialogOpen(false);
+    setEditingTplId(null);
+    setTplName("");
+    loadTemplates();
+  };
+
+  const useTemplate = (t: SmsTemplate) => {
+    setMessage(t.message);
+    setCategory(t.category);
+    setVars({});
+    toast.success(`Loaded "${t.name}"`);
+  };
+
+  const deleteTemplate = async (id: string) => {
+    if (!confirm("Delete this template?")) return;
+    const { error } = await (supabase as any).from("sms_templates").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Deleted");
+    loadTemplates();
+  };
 
   const loadMerchants = async () => {
     const { data } = await supabase
@@ -244,19 +325,63 @@ export default function AdminCustomSMS() {
             </div>
           )}
 
-          {/* Templates */}
-          <div className="flex flex-wrap gap-2">
-            {TEMPLATES.map((t, i) => (
-              <Button
-                key={t.label}
-                size="sm"
-                variant="outline"
-                onClick={() => applyTemplate(i)}
-                className="text-xs h-7"
-              >
-                {t.label}
+          {/* Quick templates (built-in) */}
+          <div>
+            <Label className="text-xs text-muted-foreground">Quick start</Label>
+            <div className="flex flex-wrap gap-2 mt-1">
+              {TEMPLATES.map((t, i) => (
+                <Button
+                  key={t.label}
+                  size="sm"
+                  variant="outline"
+                  onClick={() => applyTemplate(i)}
+                  className="text-xs h-7"
+                >
+                  {t.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Saved templates (admin-created) */}
+          <div className="rounded-md border p-3 space-y-2 bg-muted/20">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs flex items-center gap-1.5">
+                <FileText className="h-3.5 w-3.5" /> Saved templates ({savedTemplates.length})
+              </Label>
+              <Button size="sm" variant="outline" onClick={openSaveTemplate} className="h-7 text-xs">
+                <BookmarkPlus className="h-3.5 w-3.5 mr-1" />
+                Save current as template
               </Button>
-            ))}
+            </div>
+            {savedTemplates.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                No saved templates yet. Compose a message and save it for reuse.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto">
+                {savedTemplates.map((t) => (
+                  <div key={t.id} className="rounded border bg-background p-2 text-xs space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium truncate">{t.name}</span>
+                      <Badge variant="outline" className="text-[10px]">{t.category}</Badge>
+                    </div>
+                    <p className="text-muted-foreground line-clamp-2">{t.message}</p>
+                    <div className="flex items-center gap-1 pt-1">
+                      <Button size="sm" variant="default" onClick={() => useTemplate(t)} className="h-6 text-[11px] px-2">
+                        Use
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => editTemplate(t)} className="h-6 text-[11px] px-2">
+                        <Pencil className="h-3 w-3" />
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => deleteTemplate(t.id)} className="h-6 text-[11px] px-2 text-destructive hover:text-destructive">
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Category + message */}
@@ -353,6 +478,52 @@ export default function AdminCustomSMS() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={tplDialogOpen} onOpenChange={setTplDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingTplId ? "Edit template" : "Save SMS template"}</DialogTitle>
+            <DialogDescription>
+              Reusable template. The current message and category will be saved.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label className="text-xs">Template name</Label>
+              <Input
+                placeholder="e.g. Weekend promo, Receipt, Payment reminder"
+                value={tplName}
+                onChange={(e) => setTplName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Category</Label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="custom">Custom</SelectItem>
+                  <SelectItem value="receipt">Receipt</SelectItem>
+                  <SelectItem value="promo">Promotion</SelectItem>
+                  <SelectItem value="reminder">Reminder</SelectItem>
+                  <SelectItem value="system">System</SelectItem>
+                  <SelectItem value="alert">Alert</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Message</Label>
+              <Textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={5} />
+              <p className="text-[11px] text-muted-foreground">
+                Use {"{amount}"}, {"{reference}"}, {"{merchant}"}, {"{date}"} — auto-filled per recipient.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setTplDialogOpen(false)}>Cancel</Button>
+            <Button onClick={saveTemplate}>{editingTplId ? "Update" : "Save"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
