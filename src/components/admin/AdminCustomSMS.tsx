@@ -325,19 +325,63 @@ export default function AdminCustomSMS() {
             </div>
           )}
 
-          {/* Templates */}
-          <div className="flex flex-wrap gap-2">
-            {TEMPLATES.map((t, i) => (
-              <Button
-                key={t.label}
-                size="sm"
-                variant="outline"
-                onClick={() => applyTemplate(i)}
-                className="text-xs h-7"
-              >
-                {t.label}
+          {/* Quick templates (built-in) */}
+          <div>
+            <Label className="text-xs text-muted-foreground">Quick start</Label>
+            <div className="flex flex-wrap gap-2 mt-1">
+              {TEMPLATES.map((t, i) => (
+                <Button
+                  key={t.label}
+                  size="sm"
+                  variant="outline"
+                  onClick={() => applyTemplate(i)}
+                  className="text-xs h-7"
+                >
+                  {t.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Saved templates (admin-created) */}
+          <div className="rounded-md border p-3 space-y-2 bg-muted/20">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs flex items-center gap-1.5">
+                <FileText className="h-3.5 w-3.5" /> Saved templates ({savedTemplates.length})
+              </Label>
+              <Button size="sm" variant="outline" onClick={openSaveTemplate} className="h-7 text-xs">
+                <BookmarkPlus className="h-3.5 w-3.5 mr-1" />
+                Save current as template
               </Button>
-            ))}
+            </div>
+            {savedTemplates.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                No saved templates yet. Compose a message and save it for reuse.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto">
+                {savedTemplates.map((t) => (
+                  <div key={t.id} className="rounded border bg-background p-2 text-xs space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium truncate">{t.name}</span>
+                      <Badge variant="outline" className="text-[10px]">{t.category}</Badge>
+                    </div>
+                    <p className="text-muted-foreground line-clamp-2">{t.message}</p>
+                    <div className="flex items-center gap-1 pt-1">
+                      <Button size="sm" variant="default" onClick={() => useTemplate(t)} className="h-6 text-[11px] px-2">
+                        Use
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => editTemplate(t)} className="h-6 text-[11px] px-2">
+                        <Pencil className="h-3 w-3" />
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => deleteTemplate(t.id)} className="h-6 text-[11px] px-2 text-destructive hover:text-destructive">
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Category + message */}
