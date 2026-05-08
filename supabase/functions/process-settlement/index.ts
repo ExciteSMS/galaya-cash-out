@@ -73,83 +73,126 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Get MoneyUnify auth_id
-    let authId: string | null = null;
-    const { data: settingData } = await supabase
+    // Load gateway config (prefer Lipila, fallback MoneyUnify)
+    const { data: settingsRows } = await supabase
       .from("app_settings")
-      .select("value")
-      .eq("key", "moneyunify_auth_id")
-      .single();
-    if (settingData?.value) authId = settingData.value;
-    if (!authId) authId = Deno.env.get("MONEYUNIFY_AUTH_ID") || null;
-    if (!authId) {
+      .select("key, value")
+      .in("key", [
+        "gateway_lipila_enabled",
+        "gateway_moneyunify_enabled",
+        "lipila_api_key",
+        "moneyunify_auth_id",
+      ]);
+    const map: Record<string, string> = {};
+    (settingsRows || []).forEach((r: any) => (map[r.key] = r.value));
+
+    const lipilaKey = map.lipila_api_key || Deno.env.get("LIPILA_API_KEY") || "";
+    const useLipila = map.gateway_lipila_enabled !== "false" && !!lipilaKey;
+    const muAuth = map.moneyunify_auth_id || Deno.env.get("MONEYUNIFY_AUTH_ID") || "";
+
+    if (!useLipila && !muAuth) {
       return new Response(JSON.stringify({ error: "Payment gateway not configured" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Format phone
-    let toReceiver = disbursement.merchant_payout_accounts.phone_number;
-    if (toReceiver.startsWith("+260")) toReceiver = "0" + toReceiver.slice(4);
-    else if (toReceiver.startsWith("260")) toReceiver = "0" + toReceiver.slice(3);
-    else if (!toReceiver.startsWith("0")) toReceiver = "0" + toReceiver;
+    // Normalize phone
+    let raw = String(disbursement.merchant_payout_accounts.phone_number).replace(/\D/g, "");
+    if (raw.startsWith("260")) raw = raw.slice(3);
+    else if (raw.startsWith("0")) raw = raw.slice(1);
+    const localPhone = "0" + raw;          // 09XXXXXXXX (MoneyUnify)
+    const intlPhone = "260" + raw;          // 260XXXXXXXXX (Lipila)
 
-    // Update status to processing
     await supabase
       .from("disbursements")
       .update({ status: "processing" })
       .eq("id", disbursement_id);
 
     const settleAmount = disbursement.net_amount;
+    let success = false;
+    let reference: string | null = null;
+    let errorMsg: string | null = null;
 
-    console.log("Settling to:", toReceiver, "amount:", settleAmount);
+    if (useLipila) {
+      const refId = (disbursement.id as string).replace(/-/g, "").slice(0, 24);
+      console.log("Lipila disbursement →", intlPhone, "amount:", settleAmount, "ref:", refId);
+      try {
+        const resp = await fetch("https://blz.lipila.io/api/v1/disbursements/mobile-money", {
+          method: "POST",
+          headers: {
+            "accept": "application/json",
+            "Content-Type": "application/json",
+            "x-api-key": lipilaKey,
+          },
+          body: JSON.stringify({
+            referenceId: refId,
+            amount: settleAmount,
+            accountNumber: intlPhone,
+            currency: "ZMW",
+            narration: `Galaya withdrawal ${refId}`,
+          }),
+        });
+        const data = await resp.json().catch(() => ({}));
+        console.log("Lipila response:", resp.status, JSON.stringify(data));
+        const status = String(data?.status || "").toLowerCase();
+        if (resp.ok && (status === "pending" || status === "success" || status === "successful")) {
+          success = true;
+          reference = data?.referenceId || data?.identifier || refId;
+        } else {
+          errorMsg = data?.message || `Lipila error (${resp.status})`;
+        }
+      } catch (e: any) {
+        errorMsg = e?.message || "Lipila request failed";
+      }
+    } else {
+      console.log("MoneyUnify settle →", localPhone, "amount:", settleAmount);
+      const body = new URLSearchParams({
+        to_receiver: localPhone,
+        auth_id: muAuth,
+        amount: String(settleAmount),
+      });
+      const resp = await fetch("https://api.moneyunify.one/settle", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Accept": "application/json",
+        },
+        body: body.toString(),
+      });
+      const data = await resp.json().catch(() => ({}));
+      console.log("MoneyUnify response:", JSON.stringify(data));
+      if (data?.is_error) {
+        errorMsg = data?.message || "Settlement failed";
+      } else {
+        success = true;
+        reference = data?.data?.reference_id || null;
+      }
+    }
 
-    const body = new URLSearchParams({
-      to_receiver: toReceiver,
-      auth_id: authId,
-      amount: String(settleAmount),
-    });
-
-    const response = await fetch("https://api.moneyunify.one/settle", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Accept": "application/json",
-      },
-      body: body.toString(),
-    });
-
-    const data = await response.json();
-    console.log("Settlement response:", JSON.stringify(data));
-
-    if (data.is_error) {
+    if (!success) {
       await supabase
         .from("disbursements")
         .update({ status: "failed" })
         .eq("id", disbursement_id);
-
-      return new Response(JSON.stringify({
-        success: false,
-        error: data.message || "Settlement failed",
-      }), {
+      return new Response(JSON.stringify({ success: false, error: errorMsg || "Settlement failed" }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Update disbursement to success
-    const reference = data.data?.reference_id || null;
+    // Lipila returns Pending initially — keep status pending if not final
+    const finalStatus = useLipila ? "pending" : "success";
     await supabase
       .from("disbursements")
-      .update({ status: "success", reference })
+      .update({ status: finalStatus, reference })
       .eq("id", disbursement_id);
 
     return new Response(JSON.stringify({
       success: true,
       reference,
-      amount: data.data?.amount,
-      cost: data.data?.cost,
+      gateway: useLipila ? "lipila" : "moneyunify",
+      status: finalStatus,
     }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
