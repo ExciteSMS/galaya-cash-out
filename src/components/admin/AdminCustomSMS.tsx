@@ -9,10 +9,22 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { MessageSquare, Send, Clock, Users, Phone } from "lucide-react";
+import { MessageSquare, Send, Clock, Users, Phone, BookmarkPlus, Trash2, FileText, Pencil } from "lucide-react";
 import { format } from "date-fns";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
+} from "@/components/ui/dialog";
 
 type Mode = "all_merchants" | "select_merchants" | "custom_numbers";
+
+interface SmsTemplate {
+  id: string;
+  name: string;
+  category: string;
+  message: string;
+  is_active: boolean;
+  updated_at: string;
+}
 
 interface Merchant {
   id: string;
