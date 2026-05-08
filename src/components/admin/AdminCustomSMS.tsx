@@ -61,6 +61,10 @@ export default function AdminCustomSMS() {
   const [history, setHistory] = useState<SmsLog[]>([]);
   const [search, setSearch] = useState("");
   const [vars, setVars] = useState<Record<string, string>>({});
+  const [savedTemplates, setSavedTemplates] = useState<SmsTemplate[]>([]);
+  const [tplDialogOpen, setTplDialogOpen] = useState(false);
+  const [tplName, setTplName] = useState("");
+  const [editingTplId, setEditingTplId] = useState<string | null>(null);
 
   // Auto-filled by the server from the merchant's latest transaction / profile
   const AUTO_TOKENS = new Set(["amount", "reference", "merchant", "date"]);
