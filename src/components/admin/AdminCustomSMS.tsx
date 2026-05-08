@@ -478,6 +478,52 @@ export default function AdminCustomSMS() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={tplDialogOpen} onOpenChange={setTplDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingTplId ? "Edit template" : "Save SMS template"}</DialogTitle>
+            <DialogDescription>
+              Reusable template. The current message and category will be saved.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label className="text-xs">Template name</Label>
+              <Input
+                placeholder="e.g. Weekend promo, Receipt, Payment reminder"
+                value={tplName}
+                onChange={(e) => setTplName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Category</Label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="custom">Custom</SelectItem>
+                  <SelectItem value="receipt">Receipt</SelectItem>
+                  <SelectItem value="promo">Promotion</SelectItem>
+                  <SelectItem value="reminder">Reminder</SelectItem>
+                  <SelectItem value="system">System</SelectItem>
+                  <SelectItem value="alert">Alert</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Message</Label>
+              <Textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={5} />
+              <p className="text-[11px] text-muted-foreground">
+                Use {"{amount}"}, {"{reference}"}, {"{merchant}"}, {"{date}"} — auto-filled per recipient.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setTplDialogOpen(false)}>Cancel</Button>
+            <Button onClick={saveTemplate}>{editingTplId ? "Update" : "Save"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
