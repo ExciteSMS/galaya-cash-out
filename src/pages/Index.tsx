@@ -220,10 +220,10 @@ const ATMFrame = ({ children }: { children: React.ReactNode }) => (
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
           <span className="font-display text-xs text-primary tracking-[0.3em] uppercase text-glow">
-            Galaya Payment Terminal
+            Galapesa Payment Terminal
           </span>
         </div>
-        <div className="text-[10px] text-muted-foreground">v2.1</div>
+        <div className="text-[10px] text-muted-foreground">v1.0</div>
       </div>
 
       {/* Mobile top bar */}
@@ -231,10 +231,10 @@ const ATMFrame = ({ children }: { children: React.ReactNode }) => (
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
           <span className="font-display text-[10px] text-primary tracking-[0.2em] uppercase text-glow">
-            Galaya
+            Galapasa
           </span>
         </div>
-        <div className="text-[10px] text-muted-foreground">v2.1</div>
+        <div className="text-[10px] text-muted-foreground">v1.0</div>
       </div>
 
       {/* Screen area */}
