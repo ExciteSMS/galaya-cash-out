@@ -80,17 +80,23 @@ Deno.serve(async (req: Request) => {
       .in("key", [
         "gateway_lipila_enabled",
         "gateway_moneyunify_enabled",
+        "gateway_lenco_enabled",
         "lipila_api_key",
         "moneyunify_auth_id",
+        "lenco_api_key",
+        "lenco_account_number",
       ]);
     const map: Record<string, string> = {};
     (settingsRows || []).forEach((r: any) => (map[r.key] = r.value));
 
+    const lencoKey = map.lenco_api_key || Deno.env.get("LENCO_API_KEY") || "";
+    const useLenco = map.gateway_lenco_enabled === "true" && !!lencoKey;
+    const lencoAccount = map.lenco_account_number || "";
     const lipilaKey = map.lipila_api_key || Deno.env.get("LIPILA_API_KEY") || "";
-    const useLipila = map.gateway_lipila_enabled !== "false" && !!lipilaKey;
+    const useLipila = !useLenco && map.gateway_lipila_enabled !== "false" && !!lipilaKey;
     const muAuth = map.moneyunify_auth_id || Deno.env.get("MONEYUNIFY_AUTH_ID") || "";
 
-    if (!useLipila && !muAuth) {
+    if (!useLenco && !useLipila && !muAuth) {
       return new Response(JSON.stringify({ error: "Payment gateway not configured" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -101,7 +107,7 @@ Deno.serve(async (req: Request) => {
     let raw = String(disbursement.merchant_payout_accounts.phone_number).replace(/\D/g, "");
     if (raw.startsWith("260")) raw = raw.slice(3);
     else if (raw.startsWith("0")) raw = raw.slice(1);
-    const localPhone = "0" + raw;          // 09XXXXXXXX (MoneyUnify)
+    const localPhone = "0" + raw;          // 09XXXXXXXX (MoneyUnify / Lenco)
     const intlPhone = "260" + raw;          // 260XXXXXXXXX (Lipila)
 
     await supabase
@@ -113,8 +119,47 @@ Deno.serve(async (req: Request) => {
     let success = false;
     let reference: string | null = null;
     let errorMsg: string | null = null;
+    let gatewayUsed: "lenco" | "lipila" | "moneyunify" = "moneyunify";
 
-    if (useLipila) {
+    // Detect operator from account provider hint (fallback mtn)
+    const opHint = String(disbursement.merchant_payout_accounts.provider || "").toLowerCase();
+    const lencoOperator = ["mtn","airtel","zamtel"].includes(opHint) ? opHint : "mtn";
+
+    if (useLenco) {
+      gatewayUsed = "lenco";
+      const refId = (disbursement.id as string).replace(/-/g, "").slice(0, 24);
+      console.log("Lenco disbursement →", localPhone, "amount:", settleAmount, "ref:", refId);
+      try {
+        const resp = await fetch("https://api.lenco.co/access/v2/transactions/mobile-money", {
+          method: "POST",
+          headers: {
+            "accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${lencoKey}`,
+          },
+          body: JSON.stringify({
+            reference: refId,
+            accountId: lencoAccount,
+            phone: localPhone,
+            operator: lencoOperator,
+            amount: String(settleAmount),
+            narration: `Galaya withdrawal ${refId}`,
+          }),
+        });
+        const data = await resp.json().catch(() => ({}));
+        console.log("Lenco response:", resp.status, JSON.stringify(data));
+        const status = String(data?.data?.status || data?.status || "").toLowerCase();
+        if (resp.ok && !["failed","declined","error"].includes(status)) {
+          success = true;
+          reference = data?.data?.reference || data?.data?.transactionRef || refId;
+        } else {
+          errorMsg = data?.message || `Lenco error (${resp.status})`;
+        }
+      } catch (e: any) {
+        errorMsg = e?.message || "Lenco request failed";
+      }
+    } else if (useLipila) {
+      gatewayUsed = "lipila";
       const refId = (disbursement.id as string).replace(/-/g, "").slice(0, 24);
       console.log("Lipila disbursement →", intlPhone, "amount:", settleAmount, "ref:", refId);
       try {
@@ -146,6 +191,7 @@ Deno.serve(async (req: Request) => {
         errorMsg = e?.message || "Lipila request failed";
       }
     } else {
+      gatewayUsed = "moneyunify";
       console.log("MoneyUnify settle →", localPhone, "amount:", settleAmount);
       const body = new URLSearchParams({
         to_receiver: localPhone,
@@ -181,8 +227,8 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Lipila returns Pending initially — keep status pending if not final
-    const finalStatus = useLipila ? "pending" : "success";
+    // Lenco & Lipila return Pending initially — keep status pending if not final
+    const finalStatus = (gatewayUsed === "moneyunify") ? "success" : "pending";
     await supabase
       .from("disbursements")
       .update({ status: finalStatus, reference })
@@ -191,7 +237,7 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({
       success: true,
       reference,
-      gateway: useLipila ? "lipila" : "moneyunify",
+      gateway: gatewayUsed,
       status: finalStatus,
     }), {
       status: 200,
