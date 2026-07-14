@@ -20,10 +20,18 @@ async function getActiveGateway(): Promise<{ gateway: string; credentials: Recor
   const { data: settings } = await adminClient
     .from("app_settings")
     .select("key, value")
-    .in("key", ["gateway_lipila_enabled", "gateway_moneyunify_enabled", "lipila_api_key", "moneyunify_auth_id"]);
+    .in("key", [
+      "gateway_lipila_enabled", "gateway_moneyunify_enabled", "gateway_lenco_enabled",
+      "lipila_api_key", "moneyunify_auth_id", "lenco_api_key",
+    ]);
 
   const map: Record<string, string> = {};
   settings?.forEach((s: any) => (map[s.key] = s.value));
+
+  const lencoKey = map.lenco_api_key || Deno.env.get("LENCO_API_KEY") || "";
+  if (map.gateway_lenco_enabled === "true" && lencoKey) {
+    return { gateway: "lenco", credentials: { api_key: lencoKey } };
+  }
 
   if (map.gateway_lipila_enabled === "true" && map.lipila_api_key) {
     return { gateway: "lipila", credentials: { api_key: map.lipila_api_key } };
