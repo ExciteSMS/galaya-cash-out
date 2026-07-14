@@ -329,7 +329,9 @@ Deno.serve(async (req: Request) => {
 
     // Process via active gateway
     let result;
-    if (gateway === "lipila") {
+    if (gateway === "lenco") {
+      result = await processWithLenco(phone, amount, provider, credentials.api_key, credentials.account_number, reference);
+    } else if (gateway === "lipila") {
       result = await processWithLipila(phone, amount, credentials.api_key, reference);
     } else {
       result = await processWithMoneyUnify(phone, amount, credentials.auth_id);
