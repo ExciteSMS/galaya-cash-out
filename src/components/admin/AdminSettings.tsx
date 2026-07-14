@@ -141,9 +141,55 @@ export default function AdminSettings() {
             )}
           </div>
 
-          {settings.gateway_lipila_enabled === "true" && settings.gateway_moneyunify_enabled !== "false" && (
+          {/* Lenco */}
+          <div className="border rounded-lg p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-foreground">Lenco</h3>
+                <p className="text-xs text-muted-foreground">Mobile Money Collections & Disbursements via Lenco (Zambia)</p>
+              </div>
+              <Switch
+                checked={settings.gateway_lenco_enabled === "true"}
+                onCheckedChange={(checked) => handleToggle("gateway_lenco_enabled", checked)}
+              />
+            </div>
+            {settings.gateway_lenco_enabled === "true" && (
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="lenco-key">API Key (Bearer Token)</Label>
+                  <div className="relative mt-1">
+                    <Input
+                      id="lenco-key"
+                      type={showLencoKey ? "text" : "password"}
+                      value={settings.lenco_api_key || ""}
+                      onChange={(e) => handleChange("lenco_api_key", e.target.value)}
+                      placeholder="Enter your Lenco API key"
+                      className="pr-10"
+                    />
+                    <button type="button" onClick={() => setShowLencoKey(!showLencoKey)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                      {showLencoKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Request via support@lenco.co — see lenco-api.readme.io</p>
+                </div>
+                <div>
+                  <Label htmlFor="lenco-account">Merchant Account Number</Label>
+                  <Input
+                    id="lenco-account"
+                    value={settings.lenco_account_number || ""}
+                    onChange={(e) => handleChange("lenco_account_number", e.target.value)}
+                    placeholder="Your Lenco account number"
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">The Lenco account collections will be credited to.</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {[settings.gateway_lipila_enabled === "true", settings.gateway_moneyunify_enabled !== "false", settings.gateway_lenco_enabled === "true"].filter(Boolean).length > 1 && (
             <div className="bg-accent/50 rounded-lg p-3 text-xs text-accent-foreground">
-              <p className="font-medium">⚡ Both gateways enabled — Lipila will be used as the primary gateway.</p>
+              <p className="font-medium">⚡ Priority order: Lenco → Lipila → MoneyUnify (first enabled with credentials wins).</p>
             </div>
           )}
         </CardContent>
