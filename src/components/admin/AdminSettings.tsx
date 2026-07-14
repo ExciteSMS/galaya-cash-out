@@ -38,7 +38,7 @@ export default function AdminSettings() {
     setSaving(true);
     try {
       const gatewayAndSmsKeys = Object.keys(settings).filter(
-        (k) => k.startsWith("gateway_") || k.startsWith("moneyunify_") || k.startsWith("lipila_") || k.startsWith("sms_") || k.startsWith("excite_")
+        (k) => k.startsWith("gateway_") || k.startsWith("moneyunify_") || k.startsWith("lipila_") || k.startsWith("lenco_") || k.startsWith("sms_") || k.startsWith("excite_")
       );
       await Promise.all(gatewayAndSmsKeys.map((key) => upsertSetting(key, settings[key])));
       await logAudit("settings_updated", "app_settings", undefined, { keys: gatewayAndSmsKeys });
