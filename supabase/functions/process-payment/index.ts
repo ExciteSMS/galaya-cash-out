@@ -48,19 +48,25 @@ async function getActiveGateway(_supabase: any): Promise<{ gateway: string; cred
   const { data: settings } = await adminClient
     .from("app_settings")
     .select("key, value")
-    .in("key", ["gateway_lipila_enabled", "gateway_moneyunify_enabled", "lipila_api_key", "moneyunify_auth_id"]);
+    .in("key", [
+      "gateway_lipila_enabled", "gateway_moneyunify_enabled", "gateway_lenco_enabled",
+      "lipila_api_key", "moneyunify_auth_id", "lenco_api_key", "lenco_account_number",
+    ]);
 
   const map: Record<string, string> = {};
   settings?.forEach((s: any) => (map[s.key] = s.value));
 
-  // Lipila is the default and primary gateway. Use it whenever a key is available
-  // (unless explicitly disabled in settings).
+  // Priority: Lenco → Lipila → MoneyUnify
+  const lencoKey = map.lenco_api_key || Deno.env.get("LENCO_API_KEY") || "";
+  if (map.gateway_lenco_enabled === "true" && lencoKey) {
+    return { gateway: "lenco", credentials: { api_key: lencoKey, account_number: map.lenco_account_number || "" } };
+  }
+
   const lipilaKey = map.lipila_api_key || Deno.env.get("LIPILA_API_KEY") || "";
   if (map.gateway_lipila_enabled !== "false" && lipilaKey) {
     return { gateway: "lipila", credentials: { api_key: lipilaKey } };
   }
 
-  // Fallback to MoneyUnify only if Lipila is unavailable AND MoneyUnify is enabled.
   if (map.gateway_moneyunify_enabled === "true") {
     const authId = map.moneyunify_auth_id || Deno.env.get("MONEYUNIFY_AUTH_ID") || "";
     if (authId) {
@@ -69,6 +75,71 @@ async function getActiveGateway(_supabase: any): Promise<{ gateway: string; cred
   }
 
   return { gateway: "none", credentials: {} };
+}
+
+function providerToLencoOperator(p: string): string {
+  const map: Record<string, string> = { MTN: "mtn", Airtel: "airtel", Zamtel: "zamtel" };
+  return map[p] || p.toLowerCase();
+}
+
+async function processWithLenco(
+  phone: string,
+  amount: number,
+  provider: string,
+  apiKey: string,
+  accountNumber: string,
+  reference: string,
+) {
+  const formattedPhone = formatPhoneLocal(phone);
+  const body = {
+    reference,
+    accountId: accountNumber,
+    phone: formattedPhone,
+    operator: providerToLencoOperator(provider),
+    amount: String(amount),
+    narration: "Galaya payment",
+  };
+
+  console.log("Calling Lenco MoMo Collection:", { phone: formattedPhone, amount, reference });
+
+  let response: Response;
+  try {
+    response = await fetch(LENCO_API, {
+      method: "POST",
+      headers: {
+        "accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(body),
+    });
+  } catch (e) {
+    console.error("Lenco network error:", e);
+    return { success: false, error: "Could not reach Lenco gateway" };
+  }
+
+  const rawText = await response.text();
+  console.log("Lenco raw response:", response.status, rawText);
+
+  let data: any = {};
+  if (rawText) {
+    try { data = JSON.parse(rawText); } catch { data = { message: rawText }; }
+  }
+
+  if (response.status >= 400 || data?.status === "error") {
+    return { success: false, error: data?.message || data?.error || `Lenco error (${response.status})` };
+  }
+
+  const txStatus = String(data?.data?.status || data?.status || "").toLowerCase();
+  if (txStatus === "failed" || txStatus === "declined") {
+    return { success: false, error: data?.message || "Payment failed" };
+  }
+
+  return {
+    success: true,
+    transaction_id: data?.data?.reference || data?.data?.transactionRef || reference,
+    status: data?.data?.status || "pending",
+  };
 }
 
 async function processWithMoneyUnify(phone: string, amount: number, authId: string) {
