@@ -54,6 +54,7 @@ Deno.serve(async (req: Request) => {
     if (dbStatus === "success" && updatedRows && updatedRows.length > 0) {
       try {
         const tx = updatedRows[0];
+fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/zra-invoice`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}` }, body: JSON.stringify({ action: "sale", transaction_id: tx.id }) }).catch((e) => console.error("ZRA error:", e));
         const merchantInfo = tx.merchants as any;
         await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-sms`, {
           method: "POST",
