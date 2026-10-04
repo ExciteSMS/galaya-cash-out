@@ -52,6 +52,10 @@ export default function AdminRefunds() {
     if (action === "approved") {
       // Update original transaction status to refunded
       await supabase.from("transactions").update({ status: "refunded" }).eq("id", refund.transaction_id);
+      // Report refund to ZRA as a credit note (skipped automatically if merchant has ZRA off)
+      supabase.functions.invoke("zra-invoice", { body: { action: "credit_note", refund_id: refund.id } })
+        .then(({ data }) => { if (data?.success) toast.success("ZRA credit note issued"); else if (data && !data.skipped) toast.error("ZRA credit note failed — retry from ZRA tab"); })
+        .catch(() => toast.error("ZRA credit note failed — retry from ZRA tab"));
     }
 
     await logAudit(`refund_${action}`, "refund", refund.id, { amount: refund.amount, merchant: refund.merchants?.name });
