@@ -126,6 +126,7 @@ Deno.serve(async (req: Request) => {
                     .eq("id", db_transaction_id)
                     .single();
                   if (txRow) {
+fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/zra-invoice`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}` }, body: JSON.stringify({ action: "sale", transaction_id: db_transaction_id }) }).catch((e) => console.error("ZRA error:", e));
                     const m = txRow.merchants as any;
                     fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-sms`, {
                       method: "POST",
@@ -206,6 +207,7 @@ Deno.serve(async (req: Request) => {
                     .eq("id", db_transaction_id)
                     .single();
                   if (txRow) {
+fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/zra-invoice`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}` }, body: JSON.stringify({ action: "sale", transaction_id: db_transaction_id }) }).catch((e) => console.error("ZRA error:", e));
                     const m = txRow.merchants as any;
                     fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-sms`, {
                       method: "POST",
@@ -288,6 +290,7 @@ Deno.serve(async (req: Request) => {
             .single();
 
           if (txRow) {
+fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/zra-invoice`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}` }, body: JSON.stringify({ action: "sale", transaction_id: db_transaction_id }) }).catch((e) => console.error("ZRA error:", e));
             const merchantInfo = txRow.merchants as any;
             await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-sms`, {
               method: "POST",

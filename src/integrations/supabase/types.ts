@@ -507,6 +507,56 @@ export type Database = {
         }
         Relationships: []
       }
+      merchant_zra_settings: {
+        Row: {
+          bhf_id: string
+          created_at: string
+          dvc_srl_no: string
+          enabled: boolean
+          id: string
+          initialized_at: string | null
+          merchant_id: string
+          tax_type: string
+          tpin: string
+          updated_at: string
+          vsdc_url: string
+        }
+        Insert: {
+          bhf_id?: string
+          created_at?: string
+          dvc_srl_no?: string
+          enabled?: boolean
+          id?: string
+          initialized_at?: string | null
+          merchant_id: string
+          tax_type?: string
+          tpin?: string
+          updated_at?: string
+          vsdc_url?: string
+        }
+        Update: {
+          bhf_id?: string
+          created_at?: string
+          dvc_srl_no?: string
+          enabled?: boolean
+          id?: string
+          initialized_at?: string | null
+          merchant_id?: string
+          tax_type?: string
+          tpin?: string
+          updated_at?: string
+          vsdc_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merchant_zra_settings_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: true
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       merchants: {
         Row: {
           address: string | null
@@ -854,6 +904,100 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      zra_invoices: {
+        Row: {
+          amount: number
+          attempts: number
+          created_at: string
+          error: string | null
+          id: string
+          intrl_data: string | null
+          invoice_no: number
+          invoice_type: string
+          merchant_id: string
+          mrc_no: string | null
+          qr_url: string | null
+          rcpt_no: string | null
+          rcpt_sign: string | null
+          refund_id: string | null
+          request: Json | null
+          response: Json | null
+          sdc_id: string | null
+          status: string
+          tax_amount: number
+          transaction_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          attempts?: number
+          created_at?: string
+          error?: string | null
+          id?: string
+          intrl_data?: string | null
+          invoice_no: number
+          invoice_type?: string
+          merchant_id: string
+          mrc_no?: string | null
+          qr_url?: string | null
+          rcpt_no?: string | null
+          rcpt_sign?: string | null
+          refund_id?: string | null
+          request?: Json | null
+          response?: Json | null
+          sdc_id?: string | null
+          status?: string
+          tax_amount?: number
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          attempts?: number
+          created_at?: string
+          error?: string | null
+          id?: string
+          intrl_data?: string | null
+          invoice_no?: number
+          invoice_type?: string
+          merchant_id?: string
+          mrc_no?: string | null
+          qr_url?: string | null
+          rcpt_no?: string | null
+          rcpt_sign?: string | null
+          refund_id?: string | null
+          request?: Json | null
+          response?: Json | null
+          sdc_id?: string | null
+          status?: string
+          tax_amount?: number
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zra_invoices_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zra_invoices_refund_id_fkey"
+            columns: ["refund_id"]
+            isOneToOne: false
+            referencedRelation: "refunds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zra_invoices_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

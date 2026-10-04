@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Store, CreditCard, Bell, HelpCircle, LogOut, Wallet, Receipt, Target, Star, Users, Moon, BookUser, Coins, Split, WifiOff, Webhook, Gift } from "lucide-react";
+import { Store, CreditCard, Bell, HelpCircle, LogOut, Wallet, Receipt, Target, Star, Users, Moon, BookUser, Coins, Split, WifiOff, Webhook, Gift, Landmark } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import BusinessProfile from "./BusinessProfile";
@@ -18,9 +18,10 @@ import SplitPayment from "./SplitPayment";
 import OfflineQueue from "./OfflineQueue";
 import MerchantWebhooks from "./MerchantWebhooks";
 import ReferralProgram from "./ReferralProgram";
+import ZraSettings from "./ZraSettings";
 import { getTransactions, Transaction } from "@/lib/api";
 
-type SettingsView = "main" | "profile" | "payments" | "notifications" | "help" | "payout" | "expenses" | "goal" | "loyalty" | "staff" | "customers" | "tip" | "split" | "offline" | "webhooks" | "referrals";
+type SettingsView = "main" | "profile" | "payments" | "notifications" | "help" | "payout" | "expenses" | "goal" | "loyalty" | "staff" | "customers" | "tip" | "split" | "offline" | "webhooks" | "referrals" | "zra";
 
 const SettingsScreen = () => {
   const { merchant, logout } = useAuth();
@@ -46,6 +47,7 @@ const SettingsScreen = () => {
   if (view === "split") return <SplitPayment onBack={() => setView("main")} />;
   if (view === "offline") return <OfflineQueue onBack={() => setView("main")} />;
   if (view === "webhooks") return <MerchantWebhooks onBack={() => setView("main")} />;
+  if (view === "zra") return <ZraSettings onBack={() => setView("main")} />;
   if (view === "referrals") return <ReferralProgram onBack={() => setView("main")} />;
   const allItems = [
     { icon: Store, label: "Business Profile", desc: "Store name, address, tier", key: "profile" as const, always: true },
@@ -59,6 +61,7 @@ const SettingsScreen = () => {
     { icon: WifiOff, label: "Offline Queue", desc: "Sales queued while offline", key: "offline" as const, flag: features.offlineMode },
     { icon: Webhook, label: "Webhooks", desc: "Receive event notifications", key: "webhooks" as const, flag: features.webhooks },
     { icon: Gift, label: "Referral Program", desc: "Invite merchants, earn rewards", key: "referrals" as const, flag: features.referrals },
+    { icon: Landmark, label: "ZRA Smart Invoice", desc: "Tax invoicing with your TPIN", key: "zra" as const, always: true },
     { icon: CreditCard, label: "Payment Settings", desc: "Mobile money providers", key: "payments" as const, always: true },
     { icon: Wallet, label: "Payout Accounts", desc: "Where you receive earnings", key: "payout" as const, flag: features.withdrawals },
     { icon: Bell, label: "Notifications", desc: "Transaction alerts", key: "notifications" as const, flag: features.notifications },

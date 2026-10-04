@@ -29,15 +29,16 @@ import AdminRiskScoring from "@/components/admin/AdminRiskScoring";
 import AdminFeatureRollouts from "@/components/admin/AdminFeatureRollouts";
 import AdminSupportInbox from "@/components/admin/AdminSupportInbox";
 import AdminCustomSMS from "@/components/admin/AdminCustomSMS";
+import AdminZraInvoices from "@/components/admin/AdminZraInvoices";
 import {
   LayoutDashboard, ArrowLeftRight, Users, Settings, LogOut, Shield,
   ArrowDownToLine, ScrollText, RotateCcw, ShieldAlert, BarChart3,
   DollarSign, UserCog, Menu, X, CheckSquare, ToggleLeft,
   Megaphone, FileText, Activity, Radio, KeyRound,
-  GitPullRequest, Clock, Bell, Calculator, Globe, Beaker, Inbox, MessageSquare,
+  GitPullRequest, Clock, Bell, Calculator, Globe, Beaker, Inbox, MessageSquare, Landmark,
 } from "lucide-react";
 
-type AdminTab = "dashboard" | "analytics" | "transactions" | "merchants" | "users" | "approvals" | "charges" | "pos_features" | "broadcast" | "sms" | "reports" | "health" | "activity_feed" | "permissions" | "refunds" | "fraud" | "disbursements" | "audit" | "settings" | "onboarding" | "scheduled_reports" | "action_notifications" | "fee_simulator" | "geo" | "risk" | "rollouts" | "support";
+type AdminTab = "dashboard" | "analytics" | "transactions" | "merchants" | "users" | "approvals" | "charges" | "pos_features" | "broadcast" | "sms" | "reports" | "health" | "activity_feed" | "permissions" | "refunds" | "fraud" | "disbursements" | "audit" | "settings" | "onboarding" | "scheduled_reports" | "action_notifications" | "fee_simulator" | "geo" | "risk" | "rollouts" | "support" | "zra";
 
 const navItems: { tab: AdminTab; label: string; icon: React.ElementType }[] = [
   { tab: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -59,6 +60,7 @@ const navItems: { tab: AdminTab; label: string; icon: React.ElementType }[] = [
   { tab: "activity_feed", label: "Live Feed", icon: Radio },
   { tab: "permissions", label: "Permissions", icon: KeyRound },
   { tab: "refunds", label: "Refunds", icon: RotateCcw },
+  { tab: "zra", label: "ZRA Invoices", icon: Landmark },
   { tab: "fraud", label: "Fraud Alerts", icon: ShieldAlert },
   { tab: "risk", label: "Risk Scoring", icon: Shield },
   { tab: "geo", label: "Geo Heatmap", icon: Globe },
@@ -186,6 +188,7 @@ export default function Admin() {
         {activeTab === "activity_feed" && <AdminActivityFeed />}
         {activeTab === "permissions" && <AdminRolePermissions />}
         {activeTab === "refunds" && <AdminRefunds />}
+        {activeTab === "zra" && <AdminZraInvoices />}
         {activeTab === "fraud" && <AdminFraudAlerts />}
         {activeTab === "disbursements" && <AdminDisbursements />}
         {activeTab === "audit" && <AdminAuditLog />}
