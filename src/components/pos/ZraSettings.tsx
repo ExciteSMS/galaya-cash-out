@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Save, PlugZap, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, PlugZap, Loader2, Power } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,6 +14,7 @@ const ZraSettings = ({ onBack }: { onBack: () => void }) => {
   const [initializedAt, setInitializedAt] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [initializing, setInitializing] = useState(false);
   const [recent, setRecent] = useState<any[]>([]);
 
   useEffect(() => {
@@ -51,6 +52,19 @@ const ZraSettings = ({ onBack }: { onBack: () => void }) => {
     setTesting(false);
     if (data?.success) { toast.success("Connected to ZRA device"); setInitializedAt(new Date().toISOString()); }
     else toast.error(data?.message || data?.error || error?.message || "Could not reach ZRA device");
+  };
+
+  const initialize = async () => {
+    setInitializing(true);
+    await save();
+    const { data, error } = await supabase.functions.invoke("zra-invoice", { body: { action: "init", merchant_id: merchant?.id } });
+    setInitializing(false);
+    if (data?.success) {
+      setInitializedAt(new Date().toISOString());
+      toast.success(data.resultCd === "902" ? "Device already initialized with ZRA" : "Device initialized with ZRA");
+    } else {
+      toast.error(data?.message || data?.error || error?.message || "Initialization failed — check TPIN, serial and VSDC address");
+    }
   };
 
   return (
