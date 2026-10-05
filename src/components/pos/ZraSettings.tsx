@@ -104,8 +104,14 @@ const ZraSettings = ({ onBack }: { onBack: () => void }) => {
         {initializedAt ? `Device connected ${new Date(initializedAt).toLocaleString()}` : "Device not yet connected"}
       </p>
 
-      <div className="flex gap-2 mt-4">
-        <Button onClick={save} disabled={saving} className="flex-1"><Save className="w-4 h-4 mr-1" />Save</Button>
+      <Button onClick={initialize} disabled={initializing} className="w-full mt-4">
+        {initializing ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Power className="w-4 h-4 mr-1" />}
+        Initialize Device
+      </Button>
+      <p className="text-[10px] text-muted-foreground mt-1">Registers this device with ZRA using your TPIN and serial number. Do this once before sending invoices.</p>
+
+      <div className="flex gap-2 mt-3">
+        <Button onClick={save} disabled={saving} variant="secondary" className="flex-1"><Save className="w-4 h-4 mr-1" />Save</Button>
         <Button onClick={test} disabled={testing} variant="outline" className="flex-1">
           {testing ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <PlugZap className="w-4 h-4 mr-1" />}Test connection
         </Button>
