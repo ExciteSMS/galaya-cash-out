@@ -660,6 +660,97 @@ export type Database = {
           },
         ]
       }
+      parked_sales: {
+        Row: {
+          created_at: string
+          id: string
+          items: Json
+          label: string
+          merchant_id: string
+          resumed_at: string | null
+          status: string
+          total: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          items?: Json
+          label: string
+          merchant_id: string
+          resumed_at?: string | null
+          status?: string
+          total?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          items?: Json
+          label?: string
+          merchant_id?: string
+          resumed_at?: string | null
+          status?: string
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parked_sales_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          barcode: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          low_stock_threshold: number
+          merchant_id: string
+          name: string
+          price: number
+          sku: string | null
+          stock_qty: number
+          updated_at: string
+        }
+        Insert: {
+          barcode?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          low_stock_threshold?: number
+          merchant_id: string
+          name: string
+          price?: number
+          sku?: string | null
+          stock_qty?: number
+          updated_at?: string
+        }
+        Update: {
+          barcode?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          low_stock_threshold?: number
+          merchant_id?: string
+          name?: string
+          price?: number
+          sku?: string | null
+          stock_qty?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       refunds: {
         Row: {
           amount: number
