@@ -1,10 +1,11 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Bell, X, Check, AlertTriangle, DollarSign, RotateCcw, Megaphone } from "lucide-react";
+import { ArrowLeft, Bell, CheckCheck, CircleDollarSign, Megaphone, Info } from "lucide-react";
+import { toast } from "sonner";
 import { format } from "date-fns";
 
-interface Notification {
+interface AppNotification {
   id: string;
   title: string;
   message: string;
@@ -13,117 +14,104 @@ interface Notification {
   created_at: string;
 }
 
-const typeIcons: Record<string, React.ElementType> = {
-  payment: DollarSign,
-  refund: RotateCcw,
-  alert: AlertTriangle,
+const typeIcon: Record<string, typeof Bell> = {
+  transaction: CircleDollarSign,
   announcement: Megaphone,
-  info: Bell,
 };
 
-export default function NotificationCenter() {
+export default function NotificationCenter({ onBack }: { onBack: () => void }) {
   const { merchant } = useAuth();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [open, setOpen] = useState(false);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const fetchNotifications = useCallback(async () => {
+  const load = async () => {
     if (!merchant) return;
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("notifications")
       .select("*")
+      .or(`merchant_id.eq.${merchant.id},merchant_id.is.null`)
       .order("created_at", { ascending: false })
-      .limit(20);
-    if (data) setNotifications(data as Notification[]);
-  }, [merchant]);
-
-  useEffect(() => {
-    fetchNotifications();
-
-    // Realtime subscription
-    const channel = supabase
-      .channel("notifications")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications" }, (payload) => {
-        setNotifications(prev => [payload.new as Notification, ...prev]);
-      })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [fetchNotifications]);
-
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  const markRead = async (id: string) => {
-    await supabase.from("notifications").update({ read: true }).eq("id", id);
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+      .limit(50);
+    if (error) toast.error(error.message);
+    setNotifications((data as AppNotification[]) || []);
+    setLoading(false);
   };
+
+  useEffect(() => { load(); }, [merchant]);
 
   const markAllRead = async () => {
-    const unread = notifications.filter(n => !n.read);
+    if (!merchant) return;
+    const unread = notifications.filter((n) => !n.read);
     if (unread.length === 0) return;
-    await Promise.all(unread.map(n => supabase.from("notifications").update({ read: true }).eq("id", n.id)));
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    const { error } = await supabase
+      .from("notifications")
+      .update({ read: true })
+      .in("id", unread.map((n) => n.id));
+    if (error) { toast.error(error.message); return; }
+    load();
   };
 
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
   return (
-    <div className="relative">
-      <button
-        onClick={() => setOpen(!open)}
-        className="relative w-8 h-8 rounded border border-border flex items-center justify-center hover:bg-muted transition-colors"
-      >
-        <Bell className="w-4 h-4 text-muted-foreground" />
-        {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground rounded-full text-[8px] font-bold flex items-center justify-center animate-pulse">
-            {unreadCount > 9 ? "9+" : unreadCount}
-          </span>
-        )}
+    <div className="flex flex-col h-full p-4 overflow-y-auto">
+      <button onClick={onBack} className="flex items-center gap-2 text-sm text-muted-foreground mb-4 hover:text-foreground">
+        <ArrowLeft className="w-4 h-4" /> Back
       </button>
 
-      {open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-10 z-50 w-72 max-h-80 bg-card border border-border rounded-xl shadow-lg overflow-hidden">
-            <div className="flex items-center justify-between px-3 py-2 border-b border-border">
-              <span className="text-xs font-bold text-foreground">Notifications</span>
-              <div className="flex items-center gap-2">
-                {unreadCount > 0 && (
-                  <button onClick={markAllRead} className="text-[10px] text-primary hover:underline">Mark all read</button>
-                )}
-                <button onClick={() => setOpen(false)}>
-                  <X className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
-              </div>
-            </div>
-            <div className="overflow-y-auto max-h-64">
-              {notifications.length === 0 ? (
-                <div className="p-6 text-center text-xs text-muted-foreground">
-                  <Bell className="w-6 h-6 mx-auto mb-2 opacity-30" />
-                  No notifications yet
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="font-display font-bold text-lg text-foreground flex items-center gap-2">
+            <Bell className="w-5 h-5 text-primary" /> Notifications
+          </h2>
+          <p className="text-xs text-muted-foreground">{unreadCount} unread</p>
+        </div>
+        {unreadCount > 0 && (
+          <button
+            onClick={markAllRead}
+            className="flex items-center gap-1 text-xs text-primary font-medium"
+          >
+            <CheckCheck className="w-4 h-4" /> Mark all read
+          </button>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : notifications.length === 0 ? (
+        <div className="text-center py-12">
+          <Bell className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
+          <p className="text-sm text-muted-foreground">No notifications yet.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {notifications.map((n) => {
+            const Icon = typeIcon[n.type] || Info;
+            return (
+              <div
+                key={n.id}
+                className={`bg-card border rounded-xl p-3 flex items-start gap-3 ${
+                  n.read ? "border-border opacity-70" : "border-primary/40"
+                }`}
+              >
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                  n.read ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary"
+                }`}>
+                  <Icon className="w-4 h-4" />
                 </div>
-              ) : (
-                notifications.map(n => {
-                  const Icon = typeIcons[n.type] || Bell;
-                  return (
-                    <button
-                      key={n.id}
-                      onClick={() => markRead(n.id)}
-                      className={`w-full text-left px-3 py-2.5 border-b border-border/50 hover:bg-muted/50 transition-colors ${!n.read ? "bg-primary/5" : ""}`}
-                    >
-                      <div className="flex items-start gap-2">
-                        <Icon className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${!n.read ? "text-primary" : "text-muted-foreground"}`} />
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-xs ${!n.read ? "font-medium text-foreground" : "text-muted-foreground"}`}>{n.title}</p>
-                          <p className="text-[10px] text-muted-foreground truncate">{n.message}</p>
-                          <p className="text-[9px] text-muted-foreground mt-0.5">{format(new Date(n.created_at), "dd MMM HH:mm")}</p>
-                        </div>
-                        {!n.read && <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 flex-shrink-0" />}
-                      </div>
-                    </button>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        </>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground">{n.title}</p>
+                  <p className="text-xs text-muted-foreground">{n.message}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    {format(new Date(n.created_at), "dd MMM, HH:mm")}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       )}
     </div>
   );
