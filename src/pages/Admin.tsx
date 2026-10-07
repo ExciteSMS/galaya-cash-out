@@ -8,6 +8,8 @@ import AdminMerchants from "@/components/admin/AdminMerchants";
 import AdminDisbursements from "@/components/admin/AdminDisbursements";
 import AdminSettings from "@/components/admin/AdminSettings";
 import AdminAuditLog from "@/components/admin/AdminAuditLog";
+import AdminFraudFreeze from "@/components/admin/AdminFraudFreeze";
+import AdminPlatformAnalytics from "@/components/admin/AdminPlatformAnalytics";
 import AdminRefunds from "@/components/admin/AdminRefunds";
 import AdminFraudAlerts from "@/components/admin/AdminFraudAlerts";
 import AdminAnalytics from "@/components/admin/AdminAnalytics";
@@ -38,7 +40,7 @@ import {
   GitPullRequest, Clock, Bell, Calculator, Globe, Beaker, Inbox, MessageSquare, Landmark,
 } from "lucide-react";
 
-type AdminTab = "dashboard" | "analytics" | "transactions" | "merchants" | "users" | "approvals" | "charges" | "pos_features" | "broadcast" | "sms" | "reports" | "health" | "activity_feed" | "permissions" | "refunds" | "fraud" | "disbursements" | "audit" | "settings" | "onboarding" | "scheduled_reports" | "action_notifications" | "fee_simulator" | "geo" | "risk" | "rollouts" | "support" | "zra";
+type AdminTab = "dashboard" | "analytics" | "transactions" | "merchants" | "users" | "approvals" | "charges" | "pos_features" | "broadcast" | "sms" | "reports" | "health" | "activity_feed" | "permissions" | "refunds" | "fraud" | "disbursements" | "audit" | "settings" | "onboarding" | "scheduled_reports" | "action_notifications" | "fee_simulator" | "geo" | "risk" | "rollouts" | "support" | "zra" | "fraud_freeze" | "platform_analytics";
 
 const navItems: { tab: AdminTab; label: string; icon: React.ElementType }[] = [
   { tab: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -61,6 +63,8 @@ const navItems: { tab: AdminTab; label: string; icon: React.ElementType }[] = [
   { tab: "permissions", label: "Permissions", icon: KeyRound },
   { tab: "refunds", label: "Refunds", icon: RotateCcw },
   { tab: "zra", label: "ZRA Invoices", icon: Landmark },
+  { tab: "fraud_freeze", label: "Fraud & Freeze", icon: Landmark },
+  { tab: "platform_analytics", label: "Platform Analytics", icon: Landmark },
   { tab: "fraud", label: "Fraud Alerts", icon: ShieldAlert },
   { tab: "risk", label: "Risk Scoring", icon: Shield },
   { tab: "geo", label: "Geo Heatmap", icon: Globe },
@@ -189,6 +193,8 @@ export default function Admin() {
         {activeTab === "permissions" && <AdminRolePermissions />}
         {activeTab === "refunds" && <AdminRefunds />}
         {activeTab === "zra" && <AdminZraInvoices />}
+        {activeTab === "fraud_freeze" && <AdminFraudFreeze />}
+        {activeTab === "platform_analytics" && <AdminPlatformAnalytics />}
         {activeTab === "fraud" && <AdminFraudAlerts />}
         {activeTab === "disbursements" && <AdminDisbursements />}
         {activeTab === "audit" && <AdminAuditLog />}
