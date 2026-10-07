@@ -4,7 +4,7 @@ import { Transaction } from "@/lib/api";
 import { subDays, eachDayOfInterval, format } from "date-fns";
 import SalesGoalRing from "./SalesGoalRing";
 import MerchantQRCode from "./MerchantQRCode";
-import NotificationCenter from "./NotificationCenter";
+import NotificationBell from "./NotificationBell";
 import { useAuth } from "@/hooks/useAuth";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 
@@ -72,7 +72,7 @@ const Dashboard = ({ transactions, onNewSale, onRepeatSale }: DashboardProps) =>
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {features.notifications && <NotificationCenter />}
+          {features.notifications && <NotificationBell />}
           {pendingCount > 0 && (
             <div className="relative">
               <div className="w-8 h-8 rounded border border-primary/50 flex items-center justify-center">
