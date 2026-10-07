@@ -33,7 +33,7 @@ export default function ParkedSales({ onBack }: { onBack: () => void }) {
       .eq("status", "parked")
       .order("created_at", { ascending: false });
     if (error) toast.error(error.message);
-    setParked((data as ParkedSale[]) || []);
+    setParked((data as unknown as ParkedSale[]) || []);
     setLoading(false);
   };
 
@@ -49,7 +49,7 @@ export default function ParkedSales({ onBack }: { onBack: () => void }) {
       merchant_id: merchant.id,
       label: label.trim(),
       total: Number(total),
-      items: note.trim() ? [{ name: note.trim(), qty: 1, price: Number(total) }] : [],
+      items: (note.trim() ? [{ name: note.trim(), qty: 1, price: Number(total) }] : []) as any,
     });
     setSaving(false);
     if (error) { toast.error(error.message); return; }

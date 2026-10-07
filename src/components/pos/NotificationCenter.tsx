@@ -19,7 +19,7 @@ const typeIcon: Record<string, typeof Bell> = {
   announcement: Megaphone,
 };
 
-export default function NotificationCenter({ onBack }: { onBack: () => void }) {
+export default function NotificationCenter({ onBack }: { onBack?: () => void }) {
   const { merchant } = useAuth();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,9 +55,9 @@ export default function NotificationCenter({ onBack }: { onBack: () => void }) {
 
   return (
     <div className="flex flex-col h-full p-4 overflow-y-auto">
-      <button onClick={onBack} className="flex items-center gap-2 text-sm text-muted-foreground mb-4 hover:text-foreground">
+      {onBack && <button onClick={onBack} className="flex items-center gap-2 text-sm text-muted-foreground mb-4 hover:text-foreground">
         <ArrowLeft className="w-4 h-4" /> Back
-      </button>
+      </button>}
 
       <div className="flex items-center justify-between mb-4">
         <div>
