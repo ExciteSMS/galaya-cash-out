@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import BottomNav, { Tab } from "@/components/pos/BottomNav";
 import Dashboard from "@/components/pos/Dashboard";
 import NewSale from "@/components/pos/NewSale";
+import ProductSelect, { CartItem } from "@/components/pos/ProductSelect";
 import UssdPushScreen from "@/components/pos/UssdPushScreen";
 import SaleReceipt from "@/components/pos/SaleReceipt";
 import TransactionHistory from "@/components/pos/TransactionHistory";
@@ -9,10 +10,11 @@ import WithdrawalScreen from "@/components/pos/WithdrawalScreen";
 import SettingsScreen from "@/components/pos/SettingsScreen";
 import AuthScreen from "@/components/pos/AuthScreen";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Provider, Transaction, processPayment, getTransactions, detectProvider } from "@/lib/api";
 import { toast } from "sonner";
 
-type SaleFlow = "idle" | "new" | "ussd" | "receipt";
+type SaleFlow = "idle" | "new" | "products" | "ussd" | "receipt";
 
 const Index = () => {
   const { user, merchant, loading } = useAuth();
