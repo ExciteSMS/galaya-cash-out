@@ -176,8 +176,15 @@ const Index = () => {
           <NewSale
             onStartPayment={handleStartPayment}
             onCancel={handleGoHome}
+            onSelectProducts={handleOpenProducts}
             initialPhone={phone}
             initialAmount={amount}
+          />
+        )}
+        {saleFlow === "products" && (
+          <ProductSelect
+            onDone={handleProductsDone}
+            onCancel={handleGoHome}
           />
         )}
         {saleFlow === "ussd" && (
