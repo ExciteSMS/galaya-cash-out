@@ -18,7 +18,7 @@ const PROVIDERS: { id: Provider; name: string; color: string }[] = [
   { id: "Airtel", name: "Airtel Money", color: "bg-airtel" },
 ];
 
-const NewSale = ({ onStartPayment, onCancel, initialPhone = "", initialAmount = 0 }: NewSaleProps) => {
+const NewSale = ({ onStartPayment, onCancel, onSelectProducts, initialPhone = "", initialAmount = 0 }: NewSaleProps) => {
   const [step, setStep] = useState<SaleStep>(initialAmount > 0 ? "phone" : "amount");
   const [amountStr, setAmountStr] = useState(initialAmount > 0 ? String(initialAmount) : "");
   const [phone, setPhone] = useState(initialPhone);
@@ -132,7 +132,7 @@ const NewSale = ({ onStartPayment, onCancel, initialPhone = "", initialAmount = 
           </div>
 
           {/* Quick amounts */}
-          <div className="grid grid-cols-3 gap-2 mb-3">
+          <div className="grid grid-cols-3 gap-2 mb-2">
             {PRESET_AMOUNTS.map((a) => (
               <button
                 key={a}
@@ -143,6 +143,17 @@ const NewSale = ({ onStartPayment, onCancel, initialPhone = "", initialAmount = 
               </button>
             ))}
           </div>
+
+          {/* Product selection (optional mode) */}
+          {onSelectProducts && (
+            <button
+              onClick={onSelectProducts}
+              className="w-full flex items-center justify-center gap-2 bg-card border border-border rounded-xl py-2.5 mb-3 text-sm font-medium text-foreground hover:border-primary hover:bg-muted transition-colors active:scale-[0.98]"
+            >
+              <Package className="w-4 h-4" />
+              Select Products
+            </button>
+          )}
 
           {/* Numpad */}
           <div className="grid grid-cols-3 gap-2 mb-3">
