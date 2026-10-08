@@ -27,6 +27,7 @@ const Index = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [moneyunifyTxId, setMoneyunifyTxId] = useState<string>("");
   const [dbTxId, setDbTxId] = useState<string>("");
+  const [cart, setCart] = useState<CartItem[]>([]);
 
   useEffect(() => {
     if (!merchant) return;
@@ -64,6 +65,18 @@ const Index = () => {
       // Update local transaction status
       const updatedTx = { ...transaction, status: "success" };
       setTransaction(updatedTx);
+      // Decrement stock for products sold in this transaction
+      if (cart.length > 0) {
+        Promise.all(
+          cart.map((item) =>
+            supabase.rpc("decrement_product_stock", {
+              p_product_id: item.id,
+              p_qty: item.qty,
+            })
+          )
+        ).catch(console.error);
+        setCart([]);
+      }
       setTransactions(prev => {
         const existing = prev.findIndex(t => t.id === updatedTx.id);
         if (existing >= 0) {
