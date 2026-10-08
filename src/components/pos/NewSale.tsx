@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { Provider, PRESET_AMOUNTS, calculateFee, detectProvider, validatePhone, lookupAccount } from "@/lib/api";
-import { ArrowLeft, Delete, User } from "lucide-react";
+import { ArrowLeft, Delete, User, Package } from "lucide-react";
 
 type SaleStep = "amount" | "phone" | "provider" | "confirm";
 
 interface NewSaleProps {
   onStartPayment: (provider: Provider, phone: string, amount: number) => void;
   onCancel: () => void;
+  onSelectProducts?: () => void;
   initialPhone?: string;
   initialAmount?: number;
 }
