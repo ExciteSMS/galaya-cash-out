@@ -101,7 +101,7 @@ const Index = () => {
       }
       setSaleFlow("new");
     }
-  }, [transaction]);
+  }, [transaction, cart]);
 
   const handleNewSale = () => {
     setSaleFlow("new");
@@ -109,6 +109,17 @@ const Index = () => {
     setProvider("MTN");
     setPhone("");
     setAmount(0);
+    setCart([]);
+  };
+
+  const handleOpenProducts = () => {
+    setSaleFlow("products");
+  };
+
+  const handleProductsDone = (total: number, items: CartItem[]) => {
+    setAmount(total);
+    setCart(items);
+    setSaleFlow("new");
   };
 
   const handleRepeatSale = (repeatPhone: string, repeatAmount: number) => {
