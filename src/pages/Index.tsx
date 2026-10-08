@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import BottomNav, { Tab } from "@/components/pos/BottomNav";
 import Dashboard from "@/components/pos/Dashboard";
 import NewSale from "@/components/pos/NewSale";
+import ProductSelect, { CartItem } from "@/components/pos/ProductSelect";
 import UssdPushScreen from "@/components/pos/UssdPushScreen";
 import SaleReceipt from "@/components/pos/SaleReceipt";
 import TransactionHistory from "@/components/pos/TransactionHistory";
@@ -9,10 +10,11 @@ import WithdrawalScreen from "@/components/pos/WithdrawalScreen";
 import SettingsScreen from "@/components/pos/SettingsScreen";
 import AuthScreen from "@/components/pos/AuthScreen";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Provider, Transaction, processPayment, getTransactions, detectProvider } from "@/lib/api";
 import { toast } from "sonner";
 
-type SaleFlow = "idle" | "new" | "ussd" | "receipt";
+type SaleFlow = "idle" | "new" | "products" | "ussd" | "receipt";
 
 const Index = () => {
   const { user, merchant, loading } = useAuth();
@@ -25,6 +27,7 @@ const Index = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [moneyunifyTxId, setMoneyunifyTxId] = useState<string>("");
   const [dbTxId, setDbTxId] = useState<string>("");
+  const [cart, setCart] = useState<CartItem[]>([]);
 
   useEffect(() => {
     if (!merchant) return;
@@ -62,6 +65,18 @@ const Index = () => {
       // Update local transaction status
       const updatedTx = { ...transaction, status: "success" };
       setTransaction(updatedTx);
+      // Decrement stock for products sold in this transaction
+      if (cart.length > 0) {
+        Promise.all(
+          cart.map((item) =>
+            supabase.rpc("decrement_product_stock", {
+              p_product_id: item.id,
+              p_qty: item.qty,
+            })
+          )
+        ).catch(console.error);
+        setCart([]);
+      }
       setTransactions(prev => {
         const existing = prev.findIndex(t => t.id === updatedTx.id);
         if (existing >= 0) {
@@ -86,7 +101,7 @@ const Index = () => {
       }
       setSaleFlow("new");
     }
-  }, [transaction]);
+  }, [transaction, cart]);
 
   const handleNewSale = () => {
     setSaleFlow("new");
@@ -94,6 +109,17 @@ const Index = () => {
     setProvider("MTN");
     setPhone("");
     setAmount(0);
+    setCart([]);
+  };
+
+  const handleOpenProducts = () => {
+    setSaleFlow("products");
+  };
+
+  const handleProductsDone = (total: number, items: CartItem[]) => {
+    setAmount(total);
+    setCart(items);
+    setSaleFlow("new");
   };
 
   const handleRepeatSale = (repeatPhone: string, repeatAmount: number) => {
@@ -150,8 +176,15 @@ const Index = () => {
           <NewSale
             onStartPayment={handleStartPayment}
             onCancel={handleGoHome}
+            onSelectProducts={handleOpenProducts}
             initialPhone={phone}
             initialAmount={amount}
+          />
+        )}
+        {saleFlow === "products" && (
+          <ProductSelect
+            onDone={handleProductsDone}
+            onCancel={handleGoHome}
           />
         )}
         {saleFlow === "ussd" && (
