@@ -22,6 +22,13 @@
       "when": 1791446146608,
       "tag": "0002_decrement_product_stock_on_sale",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791546798294,
+      "tag": "0003_add_notifications_delete_policy",
+      "breakpoints": true
     }
   ]
 }
