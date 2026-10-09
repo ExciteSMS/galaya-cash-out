@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Bell, X, Check, AlertTriangle, DollarSign, RotateCcw, Megaphone } from "lucide-react";
+import { Bell, X, Trash2, AlertTriangle, DollarSign, RotateCcw, Megaphone } from "lucide-react";
 import { format } from "date-fns";
 
 interface Notification {
@@ -52,22 +52,34 @@ export default function NotificationBell() {
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  const markRead = async (id: string) => {
-    await supabase.from("notifications").update({ read: true }).eq("id", id);
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-  };
-
-  const markAllRead = async () => {
+  const markAllRead = useCallback(async () => {
     const unread = notifications.filter(n => !n.read);
     if (unread.length === 0) return;
-    await Promise.all(unread.map(n => supabase.from("notifications").update({ read: true }).eq("id", n.id)));
+    await supabase
+      .from("notifications")
+      .update({ read: true })
+      .in("id", unread.map(n => n.id));
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  }, [notifications]);
+
+  const clearAll = useCallback(async () => {
+    if (notifications.length === 0) return;
+    const ids = notifications.map(n => n.id);
+    await supabase.from("notifications").delete().in("id", ids);
+    setNotifications([]);
+  }, [notifications]);
+
+  const toggleOpen = () => {
+    const next = !open;
+    setOpen(next);
+    // Clear the badge automatically when the bell is opened
+    if (next && unreadCount > 0) markAllRead();
   };
 
   return (
     <div className="relative">
       <button
-        onClick={() => setOpen(!open)}
+        onClick={toggleOpen}
         className="relative w-8 h-8 rounded border border-border flex items-center justify-center hover:bg-muted transition-colors"
       >
         <Bell className="w-4 h-4 text-muted-foreground" />
@@ -85,8 +97,10 @@ export default function NotificationBell() {
             <div className="flex items-center justify-between px-3 py-2 border-b border-border">
               <span className="text-xs font-bold text-foreground">Notifications</span>
               <div className="flex items-center gap-2">
-                {unreadCount > 0 && (
-                  <button onClick={markAllRead} className="text-[10px] text-primary hover:underline">Mark all read</button>
+                {notifications.length > 0 && (
+                  <button onClick={clearAll} className="text-[10px] text-destructive hover:underline flex items-center gap-1">
+                    <Trash2 className="w-3 h-3" /> Clear all
+                  </button>
                 )}
                 <button onClick={() => setOpen(false)}>
                   <X className="w-3.5 h-3.5 text-muted-foreground" />
@@ -103,10 +117,9 @@ export default function NotificationBell() {
                 notifications.map(n => {
                   const Icon = typeIcons[n.type] || Bell;
                   return (
-                    <button
+                    <div
                       key={n.id}
-                      onClick={() => markRead(n.id)}
-                      className={`w-full text-left px-3 py-2.5 border-b border-border/50 hover:bg-muted/50 transition-colors ${!n.read ? "bg-primary/5" : ""}`}
+                      className="w-full text-left px-3 py-2.5 border-b border-border/50 last:border-b-0"
                     >
                       <div className="flex items-start gap-2">
                         <Icon className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${!n.read ? "text-primary" : "text-muted-foreground"}`} />
@@ -115,9 +128,8 @@ export default function NotificationBell() {
                           <p className="text-[10px] text-muted-foreground truncate">{n.message}</p>
                           <p className="text-[9px] text-muted-foreground mt-0.5">{format(new Date(n.created_at), "dd MMM HH:mm")}</p>
                         </div>
-                        {!n.read && <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 flex-shrink-0" />}
                       </div>
-                    </button>
+                    </div>
                   );
                 })
               )}
