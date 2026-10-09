@@ -51,6 +51,16 @@ export default function NotificationCenter({ onBack }: { onBack?: () => void }) 
     load();
   };
 
+  const clearAll = async () => {
+    if (!merchant || notifications.length === 0) return;
+    const { error } = await supabase
+      .from("notifications")
+      .delete()
+      .in("id", notifications.map((n) => n.id));
+    if (error) { toast.error(error.message); return; }
+    load();
+  };
+
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
