@@ -76,14 +76,24 @@ export default function NotificationCenter({ onBack }: { onBack?: () => void }) 
           </h2>
           <p className="text-xs text-muted-foreground">{unreadCount} unread</p>
         </div>
-        {unreadCount > 0 && (
-          <button
-            onClick={markAllRead}
-            className="flex items-center gap-1 text-xs text-primary font-medium"
-          >
-            <CheckCheck className="w-4 h-4" /> Mark all read
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {unreadCount > 0 && (
+            <button
+              onClick={markAllRead}
+              className="flex items-center gap-1 text-xs text-primary font-medium"
+            >
+              <CheckCheck className="w-4 h-4" /> Mark all read
+            </button>
+          )}
+          {notifications.length > 0 && (
+            <button
+              onClick={clearAll}
+              className="flex items-center gap-1 text-xs text-destructive font-medium"
+            >
+              <Trash2 className="w-4 h-4" /> Clear all
+            </button>
+          )}
+        </div>
       </div>
 
       {loading ? (
