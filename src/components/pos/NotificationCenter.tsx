@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowLeft, Bell, CheckCheck, CircleDollarSign, Megaphone, Info } from "lucide-react";
+import { ArrowLeft, Bell, CheckCheck, CircleDollarSign, Megaphone, Info, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
