@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowLeft, Bell, CheckCheck, CircleDollarSign, Megaphone, Info } from "lucide-react";
+import { ArrowLeft, Bell, CheckCheck, CircleDollarSign, Megaphone, Info, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -51,6 +51,16 @@ export default function NotificationCenter({ onBack }: { onBack?: () => void }) 
     load();
   };
 
+  const clearAll = async () => {
+    if (!merchant || notifications.length === 0) return;
+    const { error } = await supabase
+      .from("notifications")
+      .delete()
+      .in("id", notifications.map((n) => n.id));
+    if (error) { toast.error(error.message); return; }
+    load();
+  };
+
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
@@ -66,14 +76,24 @@ export default function NotificationCenter({ onBack }: { onBack?: () => void }) 
           </h2>
           <p className="text-xs text-muted-foreground">{unreadCount} unread</p>
         </div>
-        {unreadCount > 0 && (
-          <button
-            onClick={markAllRead}
-            className="flex items-center gap-1 text-xs text-primary font-medium"
-          >
-            <CheckCheck className="w-4 h-4" /> Mark all read
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {unreadCount > 0 && (
+            <button
+              onClick={markAllRead}
+              className="flex items-center gap-1 text-xs text-primary font-medium"
+            >
+              <CheckCheck className="w-4 h-4" /> Mark all read
+            </button>
+          )}
+          {notifications.length > 0 && (
+            <button
+              onClick={clearAll}
+              className="flex items-center gap-1 text-xs text-destructive font-medium"
+            >
+              <Trash2 className="w-4 h-4" /> Clear all
+            </button>
+          )}
+        </div>
       </div>
 
       {loading ? (
