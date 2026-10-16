@@ -1,6 +1,7 @@
 import { useState, useEffect, createContext, useContext, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
+import { bindDeviceToUser, verifyDeviceForUser } from "@/lib/deviceId";
 
 interface Merchant {
   id: string;
@@ -74,11 +75,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [fetchMerchant]);
 
   const login = async (phone: string, pin: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: phoneToEmail(phone),
       password: pinToPassword(pin),
     });
     if (error) return { error: "Invalid phone or PIN" };
+    if (data.user) {
+      const check = await verifyDeviceForUser(data.user.id);
+      if (!check.ok) {
+        await supabase.auth.signOut();
+        return { error: check.reason || "Device not authorised" };
+      }
+    }
     return {};
   };
 
@@ -108,6 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (merchantError) {
         return { error: "Failed to create merchant profile" };
       }
+      await bindDeviceToUser(authData.user.id);
       await fetchMerchant(authData.user.id);
     }
 
