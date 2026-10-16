@@ -975,6 +975,48 @@ export type Database = {
           },
         ]
       }
+      user_devices: {
+        Row: {
+          created_at: string
+          device_id: string
+          device_name: string | null
+          first_seen: string
+          id: string
+          is_active: boolean
+          is_bound: boolean
+          last_seen: string
+          platform: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_id: string
+          device_name?: string | null
+          first_seen?: string
+          id?: string
+          is_active?: boolean
+          is_bound?: boolean
+          last_seen?: string
+          platform?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_id?: string
+          device_name?: string | null
+          first_seen?: string
+          id?: string
+          is_active?: boolean
+          is_bound?: boolean
+          last_seen?: string
+          platform?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
