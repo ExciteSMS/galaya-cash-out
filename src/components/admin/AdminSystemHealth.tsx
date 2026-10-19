@@ -9,6 +9,7 @@ import { format, subHours, subDays } from "date-fns";
 import PaymentReconciliationCard from "./PaymentReconciliationCard";
 import OutboxCard from "./OutboxCard";
 import ClientErrorsCard from "./ClientErrorsCard";
+import AppUpdatesCard from "./AppUpdatesCard";
 
 interface HealthCheck {
   name: string;
@@ -162,6 +163,7 @@ export default function AdminSystemHealth() {
     <div className="space-y-6">
       <PaymentReconciliationCard />
       <OutboxCard />
+      <AppUpdatesCard />
       <ClientErrorsCard />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>

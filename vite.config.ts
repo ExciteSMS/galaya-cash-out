@@ -4,7 +4,10 @@ import path from "path";
 import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
+import pkg from "./package.json";
+
 export default defineConfig(() => ({
+  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   server: {
     host: "::",
     port: 8080,

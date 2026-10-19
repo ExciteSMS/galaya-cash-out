@@ -1413,6 +1413,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      get_app_update_info: { Args: never; Returns: Json }
       get_merchant_id: { Args: never; Returns: string }
       has_merchant_perm: { Args: { p_perm: string }; Returns: boolean }
       has_role: {

@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { I18nProvider } from "@/lib/i18n";
+import UpdateGate from "@/components/pos/UpdateGate";
 import { AuthProvider } from "@/hooks/useAuth";
 import { FeatureFlagsProvider } from "@/hooks/useFeatureFlags";
 import Index from "./pages/Index";
@@ -20,6 +21,7 @@ const App = () => (
         <FeatureFlagsProvider>
           <Toaster />
           <Sonner />
+          <UpdateGate />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
