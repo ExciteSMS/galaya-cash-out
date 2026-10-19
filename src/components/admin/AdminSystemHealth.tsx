@@ -8,6 +8,7 @@ import { Activity, RefreshCw, CheckCircle2, AlertTriangle, XCircle, Database, Wi
 import { format, subHours, subDays } from "date-fns";
 import PaymentReconciliationCard from "./PaymentReconciliationCard";
 import OutboxCard from "./OutboxCard";
+import ClientErrorsCard from "./ClientErrorsCard";
 
 interface HealthCheck {
   name: string;
@@ -161,6 +162,7 @@ export default function AdminSystemHealth() {
     <div className="space-y-6">
       <PaymentReconciliationCard />
       <OutboxCard />
+      <ClientErrorsCard />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold font-display flex items-center gap-2">

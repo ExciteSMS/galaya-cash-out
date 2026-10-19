@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ArrowLeft, Plus, Package, AlertTriangle, Trash2, Pencil, ScanBarcode } from "lucide-react";
 import { toast } from "sonner";
+import { parseInventoryCsv } from "@/lib/inventoryCsv";
 
 interface Product {
   id: string;
@@ -51,6 +52,17 @@ export default function InventoryManager({ onBack }: { onBack: () => void }) {
       low_stock_threshold: String(p.low_stock_threshold),
     });
     setShowForm(true);
+  };
+
+  const handleImport = async (file: File | undefined) => {
+    if (!merchant || !file) return;
+    const { rows, errors } = parseInventoryCsv(await file.text());
+    if (errors.length) toast.error(errors.slice(0, 3).join("\n") + (errors.length > 3 ? `\n+${errors.length - 3} more` : ""));
+    if (!rows.length) return;
+    const { error } = await supabase.from("products").insert(rows.map((r) => ({ ...r, merchant_id: merchant.id })));
+    if (error) return toast.error(error.message);
+    toast.success(`Imported ${rows.length} products`);
+    load();
   };
 
   const handleSave = async () => {
@@ -108,12 +120,18 @@ export default function InventoryManager({ onBack }: { onBack: () => void }) {
           </h2>
           <p className="text-xs text-muted-foreground">{products.length} products · {lowStock.length} low stock</p>
         </div>
+        <div className="flex items-center">
+        <label className="text-xs font-medium px-3 py-2 rounded-lg border border-border cursor-pointer mr-2">
+          Import CSV
+          <input type="file" accept=".csv,text/csv" className="hidden" onChange={(e) => { handleImport(e.target.files?.[0]); e.target.value = ""; }} />
+        </label>
         <button
           onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(true); }}
           className="flex items-center gap-1 bg-primary text-primary-foreground text-xs font-medium px-3 py-2 rounded-lg"
         >
           <Plus className="w-4 h-4" /> Add
         </button>
+        </div>
       </div>
 
       {lowStock.length > 0 && (
