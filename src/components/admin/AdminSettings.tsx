@@ -53,7 +53,7 @@ export default function AdminSettings() {
     return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
   }
 
-  const callbackUrl = `${window.location.origin.replace('lovable.app', 'supabase.co')}/functions/v1/lipila-callback`;
+  const callbackUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/lipila-callback`;
 
   return (
     <div className="space-y-6">

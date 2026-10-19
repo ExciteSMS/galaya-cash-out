@@ -1,0 +1,879 @@
+-- Galaya Cash Out: full database schema (consolidated from supabase/migrations + drizzle/migrations).
+-- Run in Supabase SQL Editor on a fresh project.
+
+-- ===== supabase/migrations/20260224080409_5f891380-3a97-4bd2-9be7-263beffdd7ca.sql =====
+
+-- Merchants profile table linked to auth.users
+CREATE TABLE public.merchants (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
+  phone_number TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL DEFAULT 'Merchant',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.merchants ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Merchants can view own profile"
+  ON public.merchants FOR SELECT
+  TO authenticated
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Merchants can update own profile"
+  ON public.merchants FOR UPDATE
+  TO authenticated
+  USING (auth.uid() = user_id);
+
+-- Transactions table
+CREATE TABLE public.transactions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  merchant_id UUID NOT NULL REFERENCES public.merchants(id) ON DELETE CASCADE,
+  provider TEXT NOT NULL CHECK (provider IN ('MTN', 'Zamtel', 'Airtel')),
+  phone TEXT NOT NULL,
+  amount INTEGER NOT NULL CHECK (amount > 0),
+  fee INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'success', 'failed')),
+  reference TEXT UNIQUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
+
+-- Helper function to get merchant_id for current user
+CREATE OR REPLACE FUNCTION public.get_merchant_id()
+RETURNS UUID
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT id FROM public.merchants WHERE user_id = auth.uid() LIMIT 1;
+$$;
+
+CREATE POLICY "Merchants can view own transactions"
+  ON public.transactions FOR SELECT
+  TO authenticated
+  USING (merchant_id = public.get_merchant_id());
+
+CREATE POLICY "Merchants can insert own transactions"
+  ON public.transactions FOR INSERT
+  TO authenticated
+  WITH CHECK (merchant_id = public.get_merchant_id());
+
+CREATE POLICY "Merchants can update own transactions"
+  ON public.transactions FOR UPDATE
+  TO authenticated
+  USING (merchant_id = public.get_merchant_id());
+
+-- Index for faster queries
+CREATE INDEX idx_transactions_merchant ON public.transactions(merchant_id);
+CREATE INDEX idx_transactions_created ON public.transactions(created_at DESC);
+CREATE INDEX idx_merchants_phone ON public.merchants(phone_number);
+
+
+-- ===== supabase/migrations/20260224080709_49bc5021-615d-41a0-b0ab-71f3aa854c2d.sql =====
+
+-- Allow authenticated users to insert their own merchant profile
+CREATE POLICY "Users can create own merchant profile"
+  ON public.merchants FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+
+-- ===== supabase/migrations/20260225063220_91da3fca-4362-45f3-bcf5-3fba17e7e0f7.sql =====
+ALTER TABLE public.merchants ADD COLUMN address text DEFAULT '';
+ALTER TABLE public.merchants ADD COLUMN notification_transactions boolean DEFAULT true;
+ALTER TABLE public.merchants ADD COLUMN notification_daily_summary boolean DEFAULT false;
+
+-- ===== supabase/migrations/20260301071452_1dfcbeff-e494-44d9-ac46-ece8f5bbac7c.sql =====
+
+-- Create role enum
+CREATE TYPE public.app_role AS ENUM ('admin', 'user');
+
+-- Create user_roles table
+CREATE TABLE public.user_roles (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  role app_role NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (user_id, role)
+);
+
+ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
+
+-- Security definer function to check roles
+CREATE OR REPLACE FUNCTION public.has_role(_user_id uuid, _role app_role)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.user_roles
+    WHERE user_id = _user_id AND role = _role
+  )
+$$;
+
+-- RLS: only admins can read user_roles
+CREATE POLICY "Admins can view all roles"
+ON public.user_roles FOR SELECT
+TO authenticated
+USING (public.has_role(auth.uid(), 'admin'));
+
+-- App settings table for API keys, fee config, etc.
+CREATE TABLE public.app_settings (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  key text UNIQUE NOT NULL,
+  value text NOT NULL,
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  updated_by uuid REFERENCES auth.users(id)
+);
+
+ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
+
+-- Only admins can read/write app_settings
+CREATE POLICY "Admins can read settings"
+ON public.app_settings FOR SELECT
+TO authenticated
+USING (public.has_role(auth.uid(), 'admin'));
+
+CREATE POLICY "Admins can insert settings"
+ON public.app_settings FOR INSERT
+TO authenticated
+WITH CHECK (public.has_role(auth.uid(), 'admin'));
+
+CREATE POLICY "Admins can update settings"
+ON public.app_settings FOR UPDATE
+TO authenticated
+USING (public.has_role(auth.uid(), 'admin'));
+
+-- Allow admins to view all merchants
+CREATE POLICY "Admins can view all merchants"
+ON public.merchants FOR SELECT
+TO authenticated
+USING (public.has_role(auth.uid(), 'admin'));
+
+-- Allow admins to view all transactions
+CREATE POLICY "Admins can view all transactions"
+ON public.transactions FOR SELECT
+TO authenticated
+USING (public.has_role(auth.uid(), 'admin'));
+
+-- Insert default fee tiers
+INSERT INTO public.app_settings (key, value) VALUES
+  ('fee_tier_50', '1'),
+  ('fee_tier_200', '3'),
+  ('fee_tier_500', '5'),
+  ('fee_tier_1000', '8'),
+  ('fee_tier_above', '10'),
+  ('moneyunify_auth_id', '');
+
+
+-- ===== supabase/migrations/20260302065637_1742f0f5-6231-485e-a530-858763f918d1.sql =====
+
+-- Drop all existing RESTRICTIVE policies and recreate as PERMISSIVE
+
+-- app_settings
+DROP POLICY IF EXISTS "Admins can insert settings" ON public.app_settings;
+DROP POLICY IF EXISTS "Admins can read settings" ON public.app_settings;
+DROP POLICY IF EXISTS "Admins can update settings" ON public.app_settings;
+
+CREATE POLICY "Admins can read settings" ON public.app_settings FOR SELECT TO authenticated USING (has_role(auth.uid(), 'admin'));
+CREATE POLICY "Admins can insert settings" ON public.app_settings FOR INSERT TO authenticated WITH CHECK (has_role(auth.uid(), 'admin'));
+CREATE POLICY "Admins can update settings" ON public.app_settings FOR UPDATE TO authenticated USING (has_role(auth.uid(), 'admin'));
+
+-- merchants
+DROP POLICY IF EXISTS "Admins can view all merchants" ON public.merchants;
+DROP POLICY IF EXISTS "Merchants can view own profile" ON public.merchants;
+DROP POLICY IF EXISTS "Merchants can update own profile" ON public.merchants;
+DROP POLICY IF EXISTS "Users can create own merchant profile" ON public.merchants;
+
+CREATE POLICY "Admins can view all merchants" ON public.merchants FOR SELECT TO authenticated USING (has_role(auth.uid(), 'admin'));
+CREATE POLICY "Merchants can view own profile" ON public.merchants FOR SELECT TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "Merchants can update own profile" ON public.merchants FOR UPDATE TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "Users can create own merchant profile" ON public.merchants FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+
+-- transactions
+DROP POLICY IF EXISTS "Admins can view all transactions" ON public.transactions;
+DROP POLICY IF EXISTS "Merchants can view own transactions" ON public.transactions;
+DROP POLICY IF EXISTS "Merchants can insert own transactions" ON public.transactions;
+DROP POLICY IF EXISTS "Merchants can update own transactions" ON public.transactions;
+
+CREATE POLICY "Admins can view all transactions" ON public.transactions FOR SELECT TO authenticated USING (has_role(auth.uid(), 'admin'));
+CREATE POLICY "Merchants can view own transactions" ON public.transactions FOR SELECT TO authenticated USING (merchant_id = get_merchant_id());
+CREATE POLICY "Merchants can insert own transactions" ON public.transactions FOR INSERT TO authenticated WITH CHECK (merchant_id = get_merchant_id());
+CREATE POLICY "Merchants can update own transactions" ON public.transactions FOR UPDATE TO authenticated USING (merchant_id = get_merchant_id());
+
+-- user_roles
+DROP POLICY IF EXISTS "Admins can view all roles" ON public.user_roles;
+
+CREATE POLICY "Admins can view all roles" ON public.user_roles FOR SELECT TO authenticated USING (has_role(auth.uid(), 'admin'));
+
+
+-- ===== supabase/migrations/20260303075136_7c3ea430-e1df-4127-8538-61a6aaed4b74.sql =====
+
+-- Merchant payout accounts (where merchant receives their money)
+CREATE TABLE public.merchant_payout_accounts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  merchant_id uuid NOT NULL REFERENCES public.merchants(id) ON DELETE CASCADE,
+  provider text NOT NULL CHECK (provider IN ('MTN', 'Airtel', 'Zamtel')),
+  phone_number text NOT NULL,
+  is_default boolean NOT NULL DEFAULT false,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.merchant_payout_accounts ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Merchants can view own payout accounts"
+  ON public.merchant_payout_accounts FOR SELECT
+  USING (merchant_id = get_merchant_id());
+
+CREATE POLICY "Merchants can insert own payout accounts"
+  ON public.merchant_payout_accounts FOR INSERT
+  WITH CHECK (merchant_id = get_merchant_id());
+
+CREATE POLICY "Merchants can update own payout accounts"
+  ON public.merchant_payout_accounts FOR UPDATE
+  USING (merchant_id = get_merchant_id());
+
+CREATE POLICY "Merchants can delete own payout accounts"
+  ON public.merchant_payout_accounts FOR DELETE
+  USING (merchant_id = get_merchant_id());
+
+CREATE POLICY "Admins can view all payout accounts"
+  ON public.merchant_payout_accounts FOR SELECT
+  USING (has_role(auth.uid(), 'admin'));
+
+-- Disbursements table
+CREATE TABLE public.disbursements (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  merchant_id uuid NOT NULL REFERENCES public.merchants(id) ON DELETE CASCADE,
+  payout_account_id uuid NOT NULL REFERENCES public.merchant_payout_accounts(id),
+  amount numeric NOT NULL,
+  fee numeric NOT NULL DEFAULT 0,
+  net_amount numeric NOT NULL,
+  status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'success', 'failed')),
+  reference text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.disbursements ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Merchants can view own disbursements"
+  ON public.disbursements FOR SELECT
+  USING (merchant_id = get_merchant_id());
+
+CREATE POLICY "Merchants can insert own disbursements"
+  ON public.disbursements FOR INSERT
+  WITH CHECK (merchant_id = get_merchant_id());
+
+CREATE POLICY "Admins can view all disbursements"
+  ON public.disbursements FOR SELECT
+  USING (has_role(auth.uid(), 'admin'));
+
+CREATE POLICY "Admins can update disbursements"
+  ON public.disbursements FOR UPDATE
+  USING (has_role(auth.uid(), 'admin'));
+
+
+-- ===== supabase/migrations/20260308175847_31cf9170-1169-4b4d-bc5f-2ed01b9e8b48.sql =====
+
+-- Audit log table for admin activity tracking
+CREATE TABLE public.admin_audit_log (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  admin_user_id uuid NOT NULL,
+  action text NOT NULL,
+  target_type text,
+  target_id text,
+  details jsonb DEFAULT '{}'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.admin_audit_log ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Admins can view audit log"
+  ON public.admin_audit_log FOR SELECT
+  TO authenticated
+  USING (has_role(auth.uid(), 'admin'));
+
+CREATE POLICY "Admins can insert audit log"
+  ON public.admin_audit_log FOR INSERT
+  TO authenticated
+  WITH CHECK (has_role(auth.uid(), 'admin'));
+
+-- Add status column to merchants for suspend/activate
+ALTER TABLE public.merchants ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'active';
+
+
+-- ===== supabase/migrations/20260308194009_b4d0a4d4-dec5-436a-b1b3-771d860c88a0.sql =====
+ALTER TABLE public.merchant_payout_accounts ADD COLUMN account_name text;
+
+-- ===== supabase/migrations/20260308211202_7dd382c8-b9b3-4c7c-bf7f-07bedc327b99.sql =====
+
+-- 1. Refunds table
+CREATE TABLE public.refunds (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  transaction_id UUID NOT NULL REFERENCES public.transactions(id),
+  merchant_id UUID NOT NULL REFERENCES public.merchants(id),
+  amount NUMERIC NOT NULL,
+  reason TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'pending',
+  approved_by UUID,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.refunds ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Merchants can view own refunds" ON public.refunds FOR SELECT USING (merchant_id = get_merchant_id());
+CREATE POLICY "Merchants can insert own refunds" ON public.refunds FOR INSERT WITH CHECK (merchant_id = get_merchant_id());
+CREATE POLICY "Admins can view all refunds" ON public.refunds FOR SELECT USING (has_role(auth.uid(), 'admin'));
+CREATE POLICY "Admins can update refunds" ON public.refunds FOR UPDATE USING (has_role(auth.uid(), 'admin'));
+
+-- 2. Fraud alerts table
+CREATE TABLE public.fraud_alerts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  merchant_id UUID REFERENCES public.merchants(id),
+  transaction_id UUID REFERENCES public.transactions(id),
+  alert_type TEXT NOT NULL,
+  severity TEXT NOT NULL DEFAULT 'medium',
+  description TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'open',
+  resolved_by UUID,
+  resolved_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.fraud_alerts ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Admins can view all fraud alerts" ON public.fraud_alerts FOR SELECT USING (has_role(auth.uid(), 'admin'));
+CREATE POLICY "Admins can update fraud alerts" ON public.fraud_alerts FOR UPDATE USING (has_role(auth.uid(), 'admin'));
+CREATE POLICY "Admins can insert fraud alerts" ON public.fraud_alerts FOR INSERT WITH CHECK (has_role(auth.uid(), 'admin'));
+
+-- 3. Merchant tiers table  
+CREATE TABLE public.merchant_tiers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  min_monthly_volume NUMERIC NOT NULL DEFAULT 0,
+  commission_rate NUMERIC NOT NULL DEFAULT 2.0,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.merchant_tiers ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone authenticated can view tiers" ON public.merchant_tiers FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Admins can manage tiers" ON public.merchant_tiers FOR ALL USING (has_role(auth.uid(), 'admin'));
+
+-- Add tier_id to merchants
+ALTER TABLE public.merchants ADD COLUMN IF NOT EXISTS tier_id UUID REFERENCES public.merchant_tiers(id);
+
+-- Insert default tiers
+INSERT INTO public.merchant_tiers (name, min_monthly_volume, commission_rate, sort_order) VALUES
+  ('Bronze', 0, 3.0, 1),
+  ('Silver', 5000, 2.0, 2),
+  ('Gold', 20000, 1.0, 3);
+
+-- Allow service role to insert fraud alerts from edge functions
+-- Edge functions use service role key so they bypass RLS
+
+
+-- ===== supabase/migrations/20260308212716_1ed50548-dacf-4a44-a1f0-fac9ac9ab76e.sql =====
+
+-- 1. Notifications table
+CREATE TABLE public.notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  merchant_id UUID REFERENCES public.merchants(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  type TEXT NOT NULL DEFAULT 'info',
+  read BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Merchants can view own notifications" ON public.notifications FOR SELECT USING (merchant_id = get_merchant_id());
+CREATE POLICY "Merchants can update own notifications" ON public.notifications FOR UPDATE USING (merchant_id = get_merchant_id());
+CREATE POLICY "Admins can insert notifications" ON public.notifications FOR INSERT WITH CHECK (has_role(auth.uid(), 'admin'));
+CREATE POLICY "System can insert notifications" ON public.notifications FOR INSERT WITH CHECK (true);
+
+ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
+
+-- 2. Expenses table
+CREATE TABLE public.expenses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  merchant_id UUID NOT NULL REFERENCES public.merchants(id) ON DELETE CASCADE,
+  amount NUMERIC NOT NULL,
+  category TEXT NOT NULL DEFAULT 'other',
+  description TEXT NOT NULL DEFAULT '',
+  expense_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.expenses ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Merchants can view own expenses" ON public.expenses FOR SELECT USING (merchant_id = get_merchant_id());
+CREATE POLICY "Merchants can insert own expenses" ON public.expenses FOR INSERT WITH CHECK (merchant_id = get_merchant_id());
+CREATE POLICY "Merchants can update own expenses" ON public.expenses FOR UPDATE USING (merchant_id = get_merchant_id());
+CREATE POLICY "Merchants can delete own expenses" ON public.expenses FOR DELETE USING (merchant_id = get_merchant_id());
+
+-- 3. Add daily_sales_goal and approval fields to merchants
+ALTER TABLE public.merchants ADD COLUMN IF NOT EXISTS daily_sales_goal NUMERIC DEFAULT 0;
+ALTER TABLE public.merchants ADD COLUMN IF NOT EXISTS approval_status TEXT NOT NULL DEFAULT 'approved';
+ALTER TABLE public.merchants ADD COLUMN IF NOT EXISTS approval_note TEXT DEFAULT '';
+
+
+-- ===== supabase/migrations/20260308212725_404bd630-6016-4c79-8184-7ce6802bcd73.sql =====
+
+-- Fix: Replace overly permissive INSERT policy with proper service-role-only pattern
+DROP POLICY "System can insert notifications" ON public.notifications;
+
+
+-- ===== supabase/migrations/20260308214417_17ab9074-abc4-4ceb-ad5a-5797e14e0d3d.sql =====
+
+-- Drop the broken restrictive policies on merchant_tiers
+DROP POLICY IF EXISTS "Anyone authenticated can view tiers" ON public.merchant_tiers;
+DROP POLICY IF EXISTS "Admins can manage tiers" ON public.merchant_tiers;
+
+-- Recreate as PERMISSIVE policies
+CREATE POLICY "Anyone authenticated can view tiers"
+  ON public.merchant_tiers FOR SELECT
+  TO authenticated
+  USING (true);
+
+CREATE POLICY "Admins can manage tiers"
+  ON public.merchant_tiers FOR ALL
+  TO authenticated
+  USING (has_role(auth.uid(), 'admin'));
+
+
+-- ===== supabase/migrations/20260308215017_7fe555dd-fc1c-4bca-a71d-9e944bf98417.sql =====
+
+-- Allow authenticated users to read feature flags from app_settings
+CREATE POLICY "Authenticated users can read feature flags"
+  ON public.app_settings FOR SELECT
+  TO authenticated
+  USING (key LIKE 'feature_%');
+
+
+-- ===== supabase/migrations/20260402045942_ffcb98c2-8922-42d3-b3e1-e458297aeca2.sql =====
+
+-- Loyalty points table
+CREATE TABLE public.loyalty_points (
+  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  merchant_id UUID NOT NULL REFERENCES public.merchants(id) ON DELETE CASCADE,
+  customer_phone TEXT NOT NULL,
+  points INTEGER NOT NULL DEFAULT 0,
+  total_earned INTEGER NOT NULL DEFAULT 0,
+  total_redeemed INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  UNIQUE(merchant_id, customer_phone)
+);
+
+ALTER TABLE public.loyalty_points ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Merchants can view own loyalty points" ON public.loyalty_points
+  FOR SELECT TO authenticated USING (merchant_id = get_merchant_id());
+
+CREATE POLICY "Merchants can insert own loyalty points" ON public.loyalty_points
+  FOR INSERT TO authenticated WITH CHECK (merchant_id = get_merchant_id());
+
+CREATE POLICY "Merchants can update own loyalty points" ON public.loyalty_points
+  FOR UPDATE TO authenticated USING (merchant_id = get_merchant_id());
+
+CREATE POLICY "Admins can view all loyalty points" ON public.loyalty_points
+  FOR SELECT TO authenticated USING (has_role(auth.uid(), 'admin'));
+
+-- Merchant staff table
+CREATE TABLE public.merchant_staff (
+  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  merchant_id UUID NOT NULL REFERENCES public.merchants(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  phone TEXT NOT NULL,
+  pin_hash TEXT NOT NULL DEFAULT '',
+  role TEXT NOT NULL DEFAULT 'cashier',
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  last_login TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.merchant_staff ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Merchants can view own staff" ON public.merchant_staff
+  FOR SELECT TO authenticated USING (merchant_id = get_merchant_id());
+
+CREATE POLICY "Merchants can insert own staff" ON public.merchant_staff
+  FOR INSERT TO authenticated WITH CHECK (merchant_id = get_merchant_id());
+
+CREATE POLICY "Merchants can update own staff" ON public.merchant_staff
+  FOR UPDATE TO authenticated USING (merchant_id = get_merchant_id());
+
+CREATE POLICY "Merchants can delete own staff" ON public.merchant_staff
+  FOR DELETE TO authenticated USING (merchant_id = get_merchant_id());
+
+CREATE POLICY "Admins can view all staff" ON public.merchant_staff
+  FOR SELECT TO authenticated USING (has_role(auth.uid(), 'admin'));
+
+-- Add feature flags for new features
+INSERT INTO public.app_settings (key, value) VALUES ('feature_loyalty_points', 'true') ON CONFLICT (key) DO NOTHING;
+INSERT INTO public.app_settings (key, value) VALUES ('feature_staff_accounts', 'true') ON CONFLICT (key) DO NOTHING;
+INSERT INTO public.app_settings (key, value) VALUES ('feature_dark_mode', 'true') ON CONFLICT (key) DO NOTHING;
+
+
+-- ===== supabase/migrations/20260405090321_0e366782-90bf-45aa-b7ab-6e4e83a5467b.sql =====
+
+-- Customer directory table
+CREATE TABLE public.customer_directory (
+  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  merchant_id UUID NOT NULL REFERENCES public.merchants(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  phone TEXT NOT NULL,
+  email TEXT,
+  notes TEXT DEFAULT '',
+  total_transactions INTEGER DEFAULT 0,
+  total_spent NUMERIC DEFAULT 0,
+  last_transaction_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  UNIQUE(merchant_id, phone)
+);
+
+ALTER TABLE public.customer_directory ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Merchants can view own customers" ON public.customer_directory FOR SELECT TO authenticated USING (merchant_id = get_merchant_id());
+CREATE POLICY "Merchants can insert own customers" ON public.customer_directory FOR INSERT TO authenticated WITH CHECK (merchant_id = get_merchant_id());
+CREATE POLICY "Merchants can update own customers" ON public.customer_directory FOR UPDATE TO authenticated USING (merchant_id = get_merchant_id());
+CREATE POLICY "Merchants can delete own customers" ON public.customer_directory FOR DELETE TO authenticated USING (merchant_id = get_merchant_id());
+CREATE POLICY "Admins can view all customers" ON public.customer_directory FOR SELECT TO authenticated USING (has_role(auth.uid(), 'admin'));
+
+-- Add SMS receipt and customer directory feature flags
+INSERT INTO public.app_settings (key, value) VALUES ('feature_sms_receipt', 'true') ON CONFLICT (key) DO NOTHING;
+INSERT INTO public.app_settings (key, value) VALUES ('feature_customer_directory', 'true') ON CONFLICT (key) DO NOTHING;
+
+
+-- ===== supabase/migrations/20260502130424_c9689ec8-bfce-4ed1-89c9-dc8d2e975fe1.sql =====
+-- Support inbox tickets
+CREATE TABLE public.support_tickets (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  merchant_id UUID NOT NULL,
+  subject TEXT NOT NULL,
+  message TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'open',
+  priority TEXT NOT NULL DEFAULT 'normal',
+  assigned_to UUID,
+  admin_reply TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+ALTER TABLE public.support_tickets ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Merchants view own tickets" ON public.support_tickets FOR SELECT TO authenticated USING (merchant_id = get_merchant_id());
+CREATE POLICY "Merchants insert own tickets" ON public.support_tickets FOR INSERT TO authenticated WITH CHECK (merchant_id = get_merchant_id());
+CREATE POLICY "Admins view all tickets" ON public.support_tickets FOR SELECT TO authenticated USING (has_role(auth.uid(), 'admin'));
+CREATE POLICY "Admins update tickets" ON public.support_tickets FOR UPDATE TO authenticated USING (has_role(auth.uid(), 'admin'));
+
+-- Merchant webhooks
+CREATE TABLE public.merchant_webhooks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  merchant_id UUID NOT NULL,
+  url TEXT NOT NULL,
+  events TEXT[] NOT NULL DEFAULT ARRAY['payment.success'],
+  secret TEXT NOT NULL DEFAULT encode(gen_random_bytes(24), 'hex'),
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  last_delivery_at TIMESTAMPTZ,
+  last_status TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+ALTER TABLE public.merchant_webhooks ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Merchants manage own webhooks" ON public.merchant_webhooks FOR ALL TO authenticated USING (merchant_id = get_merchant_id()) WITH CHECK (merchant_id = get_merchant_id());
+CREATE POLICY "Admins view webhooks" ON public.merchant_webhooks FOR SELECT TO authenticated USING (has_role(auth.uid(), 'admin'));
+
+-- Referral program
+CREATE TABLE public.merchant_referrals (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  referrer_merchant_id UUID NOT NULL,
+  referred_merchant_id UUID,
+  code TEXT NOT NULL UNIQUE,
+  status TEXT NOT NULL DEFAULT 'pending',
+  reward_amount NUMERIC NOT NULL DEFAULT 50,
+  reward_paid BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+ALTER TABLE public.merchant_referrals ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Merchants view own referrals" ON public.merchant_referrals FOR SELECT TO authenticated USING (referrer_merchant_id = get_merchant_id());
+CREATE POLICY "Merchants insert own referrals" ON public.merchant_referrals FOR INSERT TO authenticated WITH CHECK (referrer_merchant_id = get_merchant_id());
+CREATE POLICY "Admins view all referrals" ON public.merchant_referrals FOR SELECT TO authenticated USING (has_role(auth.uid(), 'admin'));
+CREATE POLICY "Admins update referrals" ON public.merchant_referrals FOR UPDATE TO authenticated USING (has_role(auth.uid(), 'admin'));
+
+-- A/B feature rollouts (admin-controlled rollout %)
+CREATE TABLE public.feature_rollouts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  feature_key TEXT NOT NULL UNIQUE,
+  rollout_percent INTEGER NOT NULL DEFAULT 100,
+  target_tier_id UUID,
+  notes TEXT DEFAULT '',
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+ALTER TABLE public.feature_rollouts ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Authenticated read rollouts" ON public.feature_rollouts FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Admins manage rollouts" ON public.feature_rollouts FOR ALL TO authenticated USING (has_role(auth.uid(), 'admin')) WITH CHECK (has_role(auth.uid(), 'admin'));
+
+-- Add columns to existing tables
+ALTER TABLE public.transactions
+  ADD COLUMN IF NOT EXISTS tip_amount NUMERIC NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS split_group_id UUID,
+  ADD COLUMN IF NOT EXISTS lat NUMERIC,
+  ADD COLUMN IF NOT EXISTS lng NUMERIC,
+  ADD COLUMN IF NOT EXISTS city TEXT,
+  ADD COLUMN IF NOT EXISTS synced_offline BOOLEAN NOT NULL DEFAULT false;
+
+ALTER TABLE public.merchants
+  ADD COLUMN IF NOT EXISTS risk_score INTEGER NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS risk_band TEXT NOT NULL DEFAULT 'low',
+  ADD COLUMN IF NOT EXISTS referral_code TEXT;
+
+-- Feature flags
+INSERT INTO public.app_settings (key, value) VALUES
+  ('feature_tip', 'true'),
+  ('feature_split_payment', 'true'),
+  ('feature_offline_mode', 'true'),
+  ('feature_webhooks', 'true'),
+  ('feature_referrals', 'true')
+ON CONFLICT (key) DO NOTHING;
+
+-- ===== supabase/migrations/20260503163500_8de10ff0-5ae8-43aa-a70a-5a812d130e47.sql =====
+INSERT INTO public.app_settings (key, value)
+VALUES ('gateway_lipila_enabled', 'true'), ('gateway_moneyunify_enabled', 'false')
+ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
+
+-- ===== supabase/migrations/20260507095535_a35ec3b5-6e74-4094-baca-d30121d509a9.sql =====
+CREATE TABLE public.sms_log (
+  id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  recipient text NOT NULL,
+  message text NOT NULL,
+  sender_id text NOT NULL DEFAULT 'Galaya',
+  category text NOT NULL DEFAULT 'custom',
+  status text NOT NULL DEFAULT 'pending',
+  error text,
+  sent_by uuid,
+  merchant_id uuid,
+  created_at timestamp with time zone NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.sms_log ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Admins view sms log" ON public.sms_log
+  FOR SELECT TO authenticated
+  USING (has_role(auth.uid(), 'admin'::app_role));
+
+CREATE POLICY "Admins insert sms log" ON public.sms_log
+  FOR INSERT TO authenticated
+  WITH CHECK (has_role(auth.uid(), 'admin'::app_role));
+
+CREATE INDEX idx_sms_log_created_at ON public.sms_log(created_at DESC);
+CREATE INDEX idx_sms_log_merchant ON public.sms_log(merchant_id);
+
+-- ===== supabase/migrations/20260508123307_32e2282c-ab90-414a-b658-c4a3113683dd.sql =====
+
+CREATE TABLE public.sms_templates (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  category text NOT NULL DEFAULT 'promo',
+  message text NOT NULL,
+  is_active boolean NOT NULL DEFAULT true,
+  created_by uuid,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.sms_templates ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Admins view sms templates" ON public.sms_templates
+  FOR SELECT TO authenticated USING (has_role(auth.uid(), 'admin'));
+
+CREATE POLICY "Admins insert sms templates" ON public.sms_templates
+  FOR INSERT TO authenticated WITH CHECK (has_role(auth.uid(), 'admin'));
+
+CREATE POLICY "Admins update sms templates" ON public.sms_templates
+  FOR UPDATE TO authenticated USING (has_role(auth.uid(), 'admin'));
+
+CREATE POLICY "Admins delete sms templates" ON public.sms_templates
+  FOR DELETE TO authenticated USING (has_role(auth.uid(), 'admin'));
+
+
+-- ===== drizzle/migrations/0000_zra_smart_invoice.sql =====
+CREATE TABLE public.merchant_zra_settings (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  merchant_id uuid NOT NULL UNIQUE REFERENCES public.merchants(id) ON DELETE CASCADE,
+  enabled boolean NOT NULL DEFAULT false,
+  tpin text NOT NULL DEFAULT '',
+  bhf_id text NOT NULL DEFAULT '000',
+  dvc_srl_no text NOT NULL DEFAULT '',
+  vsdc_url text NOT NULL DEFAULT '',
+  tax_type text NOT NULL DEFAULT 'A',
+  initialized_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+GRANT SELECT, INSERT, UPDATE ON public.merchant_zra_settings TO authenticated;
+GRANT ALL ON public.merchant_zra_settings TO service_role;
+ALTER TABLE public.merchant_zra_settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Merchant manages own ZRA settings" ON public.merchant_zra_settings FOR ALL TO authenticated
+  USING (merchant_id = public.get_merchant_id() OR public.has_role(auth.uid(),'admin'))
+  WITH CHECK (merchant_id = public.get_merchant_id() OR public.has_role(auth.uid(),'admin'));
+
+CREATE TABLE public.zra_invoices (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  merchant_id uuid NOT NULL REFERENCES public.merchants(id) ON DELETE CASCADE,
+  transaction_id uuid REFERENCES public.transactions(id) ON DELETE SET NULL,
+  refund_id uuid REFERENCES public.refunds(id) ON DELETE SET NULL,
+  invoice_type text NOT NULL DEFAULT 'sale',
+  invoice_no bigint NOT NULL,
+  amount numeric NOT NULL DEFAULT 0,
+  tax_amount numeric NOT NULL DEFAULT 0,
+  status text NOT NULL DEFAULT 'pending',
+  rcpt_no text,
+  sdc_id text,
+  mrc_no text,
+  rcpt_sign text,
+  intrl_data text,
+  qr_url text,
+  error text,
+  attempts integer NOT NULL DEFAULT 0,
+  request jsonb,
+  response jsonb,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (merchant_id, invoice_no)
+);
+CREATE UNIQUE INDEX zra_invoices_tx_sale ON public.zra_invoices(transaction_id) WHERE invoice_type = 'sale';
+CREATE UNIQUE INDEX zra_invoices_refund ON public.zra_invoices(refund_id) WHERE refund_id IS NOT NULL;
+GRANT SELECT ON public.zra_invoices TO authenticated;
+GRANT ALL ON public.zra_invoices TO service_role;
+ALTER TABLE public.zra_invoices ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "View own or admin ZRA invoices" ON public.zra_invoices FOR SELECT TO authenticated
+  USING (merchant_id = public.get_merchant_id() OR public.has_role(auth.uid(),'admin'));
+
+-- ===== drizzle/migrations/0001_add_products_and_parked_sales.sql =====
+CREATE TABLE public.products (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  merchant_id UUID NOT NULL REFERENCES public.merchants(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  sku TEXT,
+  barcode TEXT,
+  price NUMERIC NOT NULL DEFAULT 0,
+  stock_qty INTEGER NOT NULL DEFAULT 0,
+  low_stock_threshold INTEGER NOT NULL DEFAULT 5,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.products TO authenticated;
+GRANT ALL ON public.products TO service_role;
+
+ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Merchants manage own products" ON public.products
+  FOR ALL TO authenticated
+  USING (merchant_id = public.get_merchant_id())
+  WITH CHECK (merchant_id = public.get_merchant_id());
+
+CREATE POLICY "Admins read all products" ON public.products
+  FOR SELECT TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'));
+
+CREATE TABLE public.parked_sales (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  merchant_id UUID NOT NULL REFERENCES public.merchants(id) ON DELETE CASCADE,
+  label TEXT NOT NULL,
+  items JSONB NOT NULL DEFAULT '[]',
+  total NUMERIC NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'parked',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  resumed_at TIMESTAMPTZ
+);
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.parked_sales TO authenticated;
+GRANT ALL ON public.parked_sales TO service_role;
+
+ALTER TABLE public.parked_sales ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Merchants manage own parked sales" ON public.parked_sales
+  FOR ALL TO authenticated
+  USING (merchant_id = public.get_merchant_id())
+  WITH CHECK (merchant_id = public.get_merchant_id());
+
+CREATE POLICY "Admins read all parked sales" ON public.parked_sales
+  FOR SELECT TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'));
+
+-- ===== drizzle/migrations/0002_decrement_product_stock_on_sale.sql =====
+CREATE OR REPLACE FUNCTION public.decrement_product_stock(p_product_id uuid, p_qty int)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  UPDATE public.products
+  SET stock_qty = GREATEST(0, stock_qty - p_qty),
+      updated_at = now()
+  WHERE id = p_product_id
+    AND merchant_id = (SELECT m.id FROM public.merchants m WHERE m.user_id = auth.uid());
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.decrement_product_stock(uuid, int) FROM anon, public;
+GRANT EXECUTE ON FUNCTION public.decrement_product_stock(uuid, int) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.decrement_product_stock(uuid, int) TO service_role;
+
+-- ===== drizzle/migrations/0003_add_notifications_delete_policy.sql =====
+create policy "Merchants can delete own notifications"
+  on public.notifications
+  for delete
+  to authenticated
+  using (merchant_id = get_merchant_id());
+
+-- ===== drizzle/migrations/0004_create_user_devices.sql =====
+
+CREATE TABLE public.user_devices (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  device_id text NOT NULL,
+  device_name text,
+  platform text,
+  user_agent text,
+  is_bound boolean NOT NULL DEFAULT false,
+  is_active boolean NOT NULL DEFAULT true,
+  first_seen timestamptz NOT NULL DEFAULT now(),
+  last_seen timestamptz NOT NULL DEFAULT now(),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (user_id, device_id)
+);
+
+CREATE INDEX user_devices_user_id_idx ON public.user_devices(user_id);
+CREATE INDEX user_devices_active_idx ON public.user_devices(is_active);
+
+GRANT SELECT, INSERT, UPDATE ON public.user_devices TO authenticated;
+GRANT ALL ON public.user_devices TO service_role;
+
+ALTER TABLE public.user_devices ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users read own devices"
+  ON public.user_devices FOR SELECT
+  TO authenticated
+  USING (user_id = auth.uid() OR public.has_role(auth.uid(), 'admin'));
+
+CREATE POLICY "Users insert own devices"
+  ON public.user_devices FOR INSERT
+  TO authenticated
+  WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Users update own devices"
+  ON public.user_devices FOR UPDATE
+  TO authenticated
+  USING (user_id = auth.uid() OR public.has_role(auth.uid(), 'admin'))
+  WITH CHECK (user_id = auth.uid() OR public.has_role(auth.uid(), 'admin'));

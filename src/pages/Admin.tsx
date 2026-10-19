@@ -14,6 +14,7 @@ import AdminRefunds from "@/components/admin/AdminRefunds";
 import AdminFraudAlerts from "@/components/admin/AdminFraudAlerts";
 import AdminAnalytics from "@/components/admin/AdminAnalytics";
 import AdminUsers from "@/components/admin/AdminUsers";
+import AdminDevices from "@/components/admin/AdminDevices";
 import AdminApprovals from "@/components/admin/AdminApprovals";
 import AdminCharges from "@/components/admin/AdminCharges";
 import AdminPOSFeatures from "@/components/admin/AdminPOSFeatures";
@@ -37,10 +38,10 @@ import {
   ArrowDownToLine, ScrollText, RotateCcw, ShieldAlert, BarChart3,
   DollarSign, UserCog, Menu, X, CheckSquare, ToggleLeft,
   Megaphone, FileText, Activity, Radio, KeyRound,
-  GitPullRequest, Clock, Bell, Calculator, Globe, Beaker, Inbox, MessageSquare, Landmark,
+  GitPullRequest, Smartphone, Clock, Bell, Calculator, Globe, Beaker, Inbox, MessageSquare, Landmark,
 } from "lucide-react";
 
-type AdminTab = "dashboard" | "analytics" | "transactions" | "merchants" | "users" | "approvals" | "charges" | "pos_features" | "broadcast" | "sms" | "reports" | "health" | "activity_feed" | "permissions" | "refunds" | "fraud" | "disbursements" | "audit" | "settings" | "onboarding" | "scheduled_reports" | "action_notifications" | "fee_simulator" | "geo" | "risk" | "rollouts" | "support" | "zra" | "fraud_freeze" | "platform_analytics";
+type AdminTab = "dashboard" | "analytics" | "transactions" | "merchants" | "users" | "devices" | "approvals" | "charges" | "pos_features" | "broadcast" | "sms" | "reports" | "health" | "activity_feed" | "permissions" | "refunds" | "fraud" | "disbursements" | "audit" | "settings" | "onboarding" | "scheduled_reports" | "action_notifications" | "fee_simulator" | "geo" | "risk" | "rollouts" | "support" | "zra" | "fraud_freeze" | "platform_analytics";
 
 const navItems: { tab: AdminTab; label: string; icon: React.ElementType }[] = [
   { tab: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -49,6 +50,7 @@ const navItems: { tab: AdminTab; label: string; icon: React.ElementType }[] = [
   { tab: "merchants", label: "Merchants", icon: Users },
   { tab: "onboarding", label: "Onboarding", icon: GitPullRequest },
   { tab: "users", label: "Users & Roles", icon: UserCog },
+  { tab: "devices", label: "Devices", icon: Smartphone },
   { tab: "approvals", label: "Approvals", icon: CheckSquare },
   { tab: "action_notifications", label: "Alerts", icon: Bell },
   { tab: "charges", label: "Charges & Fees", icon: DollarSign },
@@ -182,6 +184,7 @@ export default function Admin() {
         {activeTab === "transactions" && <AdminTransactions />}
         {activeTab === "merchants" && <AdminMerchants />}
         {activeTab === "users" && <AdminUsers />}
+        {activeTab === "devices" && <AdminDevices />}
         {activeTab === "approvals" && <AdminApprovals />}
         {activeTab === "charges" && <AdminCharges />}
         {activeTab === "pos_features" && <AdminPOSFeatures />}

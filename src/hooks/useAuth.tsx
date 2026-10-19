@@ -61,12 +61,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     // Use getSession as the single source of truth for initial load
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       const u = session?.user ?? null;
-      setUser(u);
       if (u) {
+        const check = await verifyDeviceForUser(u.id);
+        if (!check.ok) {
+          await supabase.auth.signOut();
+          setUser(null);
+          setMerchant(null);
+          setLoading(false);
+          initialised = true;
+          return;
+        }
         fetchMerchant(u.id);
       }
+      setUser(u);
       setLoading(false);
       initialised = true;
     });
