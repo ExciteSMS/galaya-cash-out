@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowLeft, Search, Package, Plus, Minus, ShoppingBag, X, ChevronDown, ChevronUp, ArrowRight, RotateCw, AlertTriangle, Check } from "lucide-react";
+import { ArrowLeft, ScanBarcode, Search, Package, Plus, Minus, ShoppingBag, X, ChevronDown, ChevronUp, ArrowRight, RotateCw, AlertTriangle, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { matchesProduct, updateProductQuantity, type SelectableProduct } from "@/lib/productSelection";
+import { matchesProduct, updateProductQuantity, findProductByCode, type SelectableProduct } from "@/lib/productSelection";
 import { toast } from "sonner";
+import BarcodeScanner, { scannerSupported } from "./BarcodeScanner";
 
 export interface CartItem { id: string; name: string; price: number; qty: number }
 interface ProductSelectProps { onDone: (total: number, items: CartItem[]) => void; onCancel: () => void }
@@ -19,6 +20,7 @@ const ProductSelect = ({ onDone, onCancel }: ProductSelectProps) => {
   const [cart, setCart] = useState<Record<string, number>>({});
   const [view, setView] = useState<"all" | "cart">("all");
   const [review, setReview] = useState(false);
+  const [scanning, setScanning] = useState(false);
 
   const load = useCallback(async () => {
     if (!merchant) return;
@@ -38,6 +40,14 @@ const ProductSelect = ({ onDone, onCancel }: ProductSelectProps) => {
   const total = cartItems.reduce((sum, item) => sum + item.price * item.qty, 0);
   const count = cartItems.reduce((sum, item) => sum + item.qty, 0);
   const changeQty = (p: SelectableProduct, delta: number) => setCart(prev => updateProductQuantity(prev, p, delta));
+  const handleScan = useCallback((code: string) => {
+    setScanning(false);
+    const product = findProductByCode(products, code);
+    if (!product) { toast.error(`No product with code ${code}`); return; }
+    if ((cart[product.id] || 0) >= product.stock_qty) { toast.error(`${product.name} is out of stock`); return; }
+    setCart(prev => updateProductQuantity(prev, product, 1));
+    toast.success(`Added ${product.name}`);
+  }, [products, cart]);
   const handleDone = () => {
     if (!cartItems.length) return;
     if (total < 10) { toast.error("Minimum sale amount is K10"); return; }
@@ -46,6 +56,7 @@ const ProductSelect = ({ onDone, onCancel }: ProductSelectProps) => {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
+      {scanning && <BarcodeScanner onScan={handleScan} onClose={() => setScanning(false)} />}
       <header className="shrink-0 px-4 pt-4 pb-3 border-b border-border space-y-3">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={onCancel} aria-label="Back to sale" title="Back to sale" className="shrink-0"><ArrowLeft /></Button>
@@ -55,7 +66,8 @@ const ProductSelect = ({ onDone, onCancel }: ProductSelectProps) => {
         <div className="relative">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input aria-label="Search products" value={search} onChange={e => setSearch(e.target.value)} placeholder="Name, SKU or barcode" className="w-full h-11 bg-card border border-border rounded-lg pl-9 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-          {search && <Button variant="ghost" size="icon" onClick={() => setSearch("")} aria-label="Clear search" title="Clear search" className="absolute right-0.5 top-0.5"><X /></Button>}
+          {search ? <Button variant="ghost" size="icon" onClick={() => setSearch("")} aria-label="Clear search" title="Clear search" className="absolute right-0.5 top-0.5"><X /></Button>
+            : scannerSupported() && <Button variant="ghost" size="icon" onClick={() => setScanning(true)} aria-label="Scan barcode" title="Scan barcode" className="absolute right-0.5 top-0.5"><ScanBarcode /></Button>}
         </div>
         <div className="flex items-center justify-between gap-2">
           <div className="flex gap-1">

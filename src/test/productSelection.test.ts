@@ -18,3 +18,17 @@ describe("product selection", () => {
     expect(updateProductQuantity({ p1: 1 }, product, -1)).toEqual({});
   });
 });
+import { findProductByCode } from "@/lib/productSelection";
+
+describe("findProductByCode", () => {
+  const list = [
+    { id: "1", name: "Rice", price: 1, stock_qty: 3, sku: "RC-1", barcode: "6001", low_stock_threshold: 1 },
+    { id: "2", name: "Salt", price: 1, stock_qty: 3, sku: null, barcode: "60012", low_stock_threshold: 1 },
+  ];
+  it("matches barcode or SKU exactly, not by substring", () => {
+    expect(findProductByCode(list, "6001")?.id).toBe("1");
+    expect(findProductByCode(list, " rc-1 ")?.id).toBe("1");
+    expect(findProductByCode(list, "600")).toBeUndefined();
+    expect(findProductByCode(list, "")).toBeUndefined();
+  });
+});

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
 import { validatePhone } from "@/lib/mockApi";
 import { Delete, Phone, Lock, UserPlus, LogIn, ShieldCheck } from "lucide-react";
@@ -9,6 +10,7 @@ type Step = "phone" | "pin" | "name" | "otp" | "newpin";
 
 const AuthScreen = () => {
   const { login, register } = useAuth();
+  const { t } = useI18n();
   const [mode, setMode] = useState<Mode>("login");
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
@@ -161,7 +163,7 @@ const AuthScreen = () => {
           <span className="text-primary font-display font-bold text-xl text-glow">G</span>
         </div>
         <h1 className="font-display font-bold text-xl text-primary text-glow">GALAYA POS</h1>
-        <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-[0.2em]">Payment Terminal</p>
+        <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-[0.2em]">{t("auth.terminal")}</p>
       </div>
 
       {/* Mode toggle */}
@@ -172,7 +174,7 @@ const AuthScreen = () => {
             mode === "login" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
           }`}
         >
-          <LogIn className="w-3.5 h-3.5" /> Sign In
+          <LogIn className="w-3.5 h-3.5" /> {t("auth.signIn")}
         </button>
         <button
           onClick={() => { setMode("register"); resetFlow(); }}
@@ -180,7 +182,7 @@ const AuthScreen = () => {
             mode === "register" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
           }`}
         >
-          <UserPlus className="w-3.5 h-3.5" /> Register
+          <UserPlus className="w-3.5 h-3.5" /> {t("auth.register")}
         </button>
       </div>
 
@@ -189,7 +191,7 @@ const AuthScreen = () => {
         <div className="flex flex-col flex-1">
           <div className="flex-1 flex flex-col items-center justify-center">
             <Phone className="w-6 h-6 text-primary mb-2" />
-            <p className="text-[10px] text-muted-foreground mb-2 font-mono uppercase tracking-wider">Enter Phone Number</p>
+            <p className="text-[10px] text-muted-foreground mb-2 font-mono uppercase tracking-wider">{t("auth.enterPhone")}</p>
             <p className="text-2xl font-bold font-mono text-foreground tracking-widest mb-1">
               {phone || "0XX XXX XXXX"}
             </p>
@@ -216,7 +218,7 @@ const AuthScreen = () => {
             disabled={phone.length < 10}
             className="w-full bg-primary text-primary-foreground rounded-lg py-3 font-display font-bold text-sm uppercase tracking-wider disabled:opacity-40 transition-all"
           >
-            Continue →
+            {t("auth.continue")}
           </button>
         </div>
       )}
@@ -227,7 +229,7 @@ const AuthScreen = () => {
           <div className="flex-1 flex flex-col items-center justify-center">
             {step === "otp" ? <ShieldCheck className="w-6 h-6 text-primary mb-2" /> : <Lock className="w-6 h-6 text-primary mb-2" />}
             <p className="text-[10px] text-muted-foreground mb-1 font-mono uppercase tracking-wider">
-              {step === "otp" ? "Enter 6-Digit SMS Code" : step === "newpin" ? "Create New 4-Digit PIN" : mode === "login" ? "Enter PIN" : "Create 4-Digit PIN"}
+              {step === "otp" ? "Enter 6-Digit SMS Code" : step === "newpin" ? "Create New 4-Digit PIN" : mode === "login" ? t("auth.enterPin") : t("auth.createPin")}
             </p>
             <p className="text-[10px] text-muted-foreground mb-3 font-mono">{phone}</p>
             <div className="flex gap-4 mb-3">
@@ -244,7 +246,7 @@ const AuthScreen = () => {
 
           {notice && !error && <p className="text-primary text-[10px] text-center mb-2 font-mono">{notice}</p>}
           {error && <p className="text-destructive text-[10px] text-center mb-2 font-mono">{error}</p>}
-          {loading && <p className="text-primary text-[10px] text-center mb-2 animate-pulse font-mono">PROCESSING...</p>}
+          {loading && <p className="text-primary text-[10px] text-center mb-2 animate-pulse font-mono">{t("auth.processing")}</p>}
 
           <div className="grid grid-cols-3 gap-1.5 mb-2">
             {["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "⌫"].map((key) =>
@@ -274,14 +276,14 @@ const AuthScreen = () => {
               onClick={startReset}
               className="text-[10px] text-primary text-center mb-2 hover:underline font-mono uppercase tracking-wider"
             >
-              Forgot PIN?
+              {t("auth.forgotPin")}
             </button>
           )}
           <button
             onClick={() => { setStep("phone"); setPin(""); setOtp(""); setNewPin(""); setResetting(false); setNotice(""); setError(""); }}
             className="text-[10px] text-muted-foreground text-center hover:text-foreground transition-colors font-mono uppercase tracking-wider"
           >
-            ← Change Number
+            {t("auth.changeNumber")}
           </button>
         </div>
       )}
@@ -291,7 +293,7 @@ const AuthScreen = () => {
         <div className="flex flex-col flex-1">
           <div className="flex-1 flex flex-col items-center justify-center">
             <UserPlus className="w-6 h-6 text-primary mb-2" />
-            <p className="text-[10px] text-muted-foreground mb-3 font-mono uppercase tracking-wider">Business Name</p>
+            <p className="text-[10px] text-muted-foreground mb-3 font-mono uppercase tracking-wider">{t("auth.businessName")}</p>
             <input
               type="text"
               placeholder="e.g. John's Shop"

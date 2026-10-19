@@ -3,6 +3,9 @@ import { printReceiptInline } from "@/lib/printReceipt";
 import { CheckCircle, Printer, RotateCcw, Share2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { can } from "@/lib/permissions";
+import { buildReceiptText, whatsappLink } from "@/lib/receipt";
 import { useEffect, useState } from "react";
 
 interface SaleReceiptProps {
@@ -12,7 +15,7 @@ interface SaleReceiptProps {
 }
 
 const SaleReceipt = ({ transaction, onNewSale, onGoHome }: SaleReceiptProps) => {
-  const { merchant } = useAuth();
+  const { merchant, role } = useAuth();
   const { provider, phone, amount, fee, reference, created_at } = transaction;
   const [showCheck, setShowCheck] = useState(false);
 
@@ -54,21 +57,7 @@ const SaleReceipt = ({ transaction, onNewSale, onGoHome }: SaleReceiptProps) => 
   };
 
   const handleShare = async () => {
-    const text = [
-      `--- ${merchant?.name || "GALAYA"} ---`,
-      `Payment Receipt`,
-      ``,
-      `Date: ${new Date(created_at).toLocaleString()}`,
-      `Provider: ${provider} Money`,
-      `Customer: ${phone}`,
-      `Amount: K${amount.toLocaleString()}`,
-      `Fee: K${fee}`,
-      `Total: K${amount.toLocaleString()}`,
-      `Ref: ${reference || "N/A"}`,
-      `Status: PAID ✓`,
-      ``,
-      `Powered by Galaya`,
-    ].join("\n");
+    const text = buildReceiptText(merchant?.name, transaction);
 
     if (navigator.share) {
       try {
@@ -80,6 +69,19 @@ const SaleReceipt = ({ transaction, onNewSale, onGoHome }: SaleReceiptProps) => 
       await navigator.clipboard.writeText(text);
       toast.success("Receipt copied to clipboard");
     }
+  };
+
+  const handleWhatsApp = () => {
+    const link = whatsappLink(phone, buildReceiptText(merchant?.name, transaction));
+    if (!link) return toast.error("Customer number is not valid for WhatsApp");
+    window.open(link, "_blank", "noopener");
+  };
+
+  const handleSms = async () => {
+    if (!can(role, "sell")) return;
+    const { error } = await supabase.rpc("send_sms_receipt", { p_transaction_id: transaction.id, p_phone: phone });
+    if (error) return toast.error("Could not send SMS receipt");
+    toast.success("SMS receipt queued");
   };
 
   return (
@@ -166,6 +168,8 @@ const SaleReceipt = ({ transaction, onNewSale, onGoHome }: SaleReceiptProps) => 
         >
           <Share2 className="w-4 h-4" />
         </button>
+        <button onClick={handleSms} className="bg-card border border-border text-foreground rounded-xl px-3 py-3.5 text-xs font-semibold hover:bg-muted transition-colors" title="Send SMS receipt">SMS</button>
+        <button onClick={handleWhatsApp} className="bg-card border border-border text-foreground rounded-xl px-3 py-3.5 text-xs font-semibold hover:bg-muted transition-colors" title="Send via WhatsApp">WA</button>
         <button
           onClick={onNewSale}
           className="flex-1 bg-primary text-primary-foreground rounded-xl py-3.5 font-display font-semibold flex items-center justify-center gap-2 hover:brightness-105 active:scale-[0.98] transition-all"

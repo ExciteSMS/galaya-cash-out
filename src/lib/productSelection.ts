@@ -23,3 +23,10 @@ export function updateProductQuantity(cart: Record<string, number>, product: Sel
   }
   return { ...cart, [product.id]: next };
 }
+
+// Exact barcode or SKU match, used for scanner input where substring search would be ambiguous.
+export function findProductByCode<T extends SelectableProduct>(products: T[], code: string): T | undefined {
+  const normalized = code.trim().toLowerCase();
+  if (!normalized) return undefined;
+  return products.find(p => p.barcode?.toLowerCase() === normalized || p.sku?.toLowerCase() === normalized);
+}

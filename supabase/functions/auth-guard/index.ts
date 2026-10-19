@@ -80,10 +80,18 @@ async function sendSms(apiKey: string, senderId: string, phone: string, message:
   }
 }
 
+// Owners and staff both log in by phone; return the auth user id of whichever owns the number.
+async function findLoginUserId(phone: string): Promise<string | null> {
+  const { data: owner } = await admin.from("merchants").select("user_id").eq("phone_number", phone).maybeSingle();
+  if (owner) return owner.user_id;
+  const { data: staff } = await admin.from("merchant_staff").select("user_id").eq("phone", phone).maybeSingle();
+  return staff?.user_id ?? null;
+}
+
 async function sendOtp(phone: string) {
   const cfg = await getSettings();
   // Answer the same way whether or not the number is registered, so numbers can't be enumerated.
-  const { data: merchant } = await admin.from("merchants").select("id").eq("phone_number", phone).maybeSingle();
+  const merchant = await findLoginUserId(phone);
   const { data: existing } = await admin.from("login_otps").select("sent_at").eq("phone", phone).maybeSingle();
   if (existing && Date.now() - new Date(existing.sent_at).getTime() < OTP_RESEND_SECONDS * 1000) {
     return json({ error: "Please wait a minute before requesting another code", code: "rate_limited" }, 429);
@@ -174,9 +182,9 @@ async function login(phone: string, pin: string, otp?: string) {
 async function resetPin(phone: string, otp: string, newPin: string) {
   const otpError = await checkOtp(phone, otp);
   if (otpError) return json({ error: otpError, code: "otp_invalid" }, 403);
-  const { data: merchant } = await admin.from("merchants").select("user_id").eq("phone_number", phone).maybeSingle();
-  if (!merchant) return json({ error: "Could not reset PIN", code: "invalid" }, 400);
-  const { error } = await admin.auth.admin.updateUserById(merchant.user_id, { password: pinToPassword(newPin) });
+  const userId = await findLoginUserId(phone);
+  if (!userId) return json({ error: "Could not reset PIN", code: "invalid" }, 400);
+  const { error } = await admin.auth.admin.updateUserById(userId, { password: pinToPassword(newPin) });
   if (error) return json({ error: "Could not reset PIN" }, 500);
   await clearState(phone);
   return json({ reset: true });

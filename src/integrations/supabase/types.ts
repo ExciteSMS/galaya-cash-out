@@ -170,6 +170,44 @@ export type Database = {
           },
         ]
       }
+      device_transfer_requests: {
+        Row: {
+          created_at: string
+          id: string
+          new_device_row_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          new_device_row_id: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          new_device_row_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_transfer_requests_new_device_row_id_fkey"
+            columns: ["new_device_row_id"]
+            isOneToOne: false
+            referencedRelation: "user_devices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       disbursements: {
         Row: {
           amount: number
@@ -514,6 +552,7 @@ export type Database = {
           phone: string
           pin_hash: string
           role: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -525,6 +564,7 @@ export type Database = {
           phone: string
           pin_hash?: string
           role?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -536,6 +576,7 @@ export type Database = {
           phone?: string
           pin_hash?: string
           role?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -1137,6 +1178,9 @@ export type Database = {
           device_id: string
           device_name: string | null
           first_seen: string
+          geofence_lat: number | null
+          geofence_lng: number | null
+          geofence_radius_m: number | null
           id: string
           is_active: boolean
           is_bound: boolean
@@ -1147,7 +1191,10 @@ export type Database = {
           location_status: string | null
           location_updated_at: string | null
           longitude: number | null
+          outside_geofence: boolean
           platform: string | null
+          remote_disabled: boolean
+          remote_disabled_at: string | null
           user_agent: string | null
           user_id: string
         }
@@ -1158,6 +1205,9 @@ export type Database = {
           device_id: string
           device_name?: string | null
           first_seen?: string
+          geofence_lat?: number | null
+          geofence_lng?: number | null
+          geofence_radius_m?: number | null
           id?: string
           is_active?: boolean
           is_bound?: boolean
@@ -1168,7 +1218,10 @@ export type Database = {
           location_status?: string | null
           location_updated_at?: string | null
           longitude?: number | null
+          outside_geofence?: boolean
           platform?: string | null
+          remote_disabled?: boolean
+          remote_disabled_at?: string | null
           user_agent?: string | null
           user_id: string
         }
@@ -1179,6 +1232,9 @@ export type Database = {
           device_id?: string
           device_name?: string | null
           first_seen?: string
+          geofence_lat?: number | null
+          geofence_lng?: number | null
+          geofence_radius_m?: number | null
           id?: string
           is_active?: boolean
           is_bound?: boolean
@@ -1189,7 +1245,10 @@ export type Database = {
           location_status?: string | null
           location_updated_at?: string | null
           longitude?: number | null
+          outside_geofence?: boolean
           platform?: string | null
+          remote_disabled?: boolean
+          remote_disabled_at?: string | null
           user_agent?: string | null
           user_id?: string
         }
@@ -1340,6 +1399,7 @@ export type Database = {
         Args: { p_product_id: string; p_qty: number }
         Returns: undefined
       }
+      device_disabled: { Args: never; Returns: boolean }
       enqueue_outbox: {
         Args: { p_key: string; p_kind: string; p_payload: Json }
         Returns: undefined
@@ -1354,12 +1414,30 @@ export type Database = {
         Returns: undefined
       }
       get_merchant_id: { Args: never; Returns: string }
+      has_merchant_perm: { Args: { p_perm: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      haversine_m: {
+        Args: { lat1: number; lat2: number; lng1: number; lng2: number }
+        Returns: number
+      }
+      merchant_role: { Args: never; Returns: string }
+      request_device_transfer: {
+        Args: { p_device_id: string }
+        Returns: undefined
+      }
+      resolve_device_transfer: {
+        Args: { p_approve: boolean; p_id: string }
+        Returns: undefined
+      }
+      send_sms_receipt: {
+        Args: { p_phone: string; p_transaction_id: string }
+        Returns: undefined
       }
       touch_reconcile: { Args: { p_id: string }; Returns: undefined }
     }

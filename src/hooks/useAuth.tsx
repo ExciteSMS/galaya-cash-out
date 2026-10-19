@@ -2,6 +2,7 @@ import { useState, useEffect, createContext, useContext, useCallback } from "rea
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import { guardedLogin, type GuardCode } from "@/lib/authGuard";
+import type { MerchantRole } from "@/lib/permissions";
 import { bindDeviceToUser, verifyDeviceForUser, sendDeviceHeartbeat } from "@/lib/deviceId";
 
 interface Merchant {
@@ -15,6 +16,7 @@ interface Merchant {
 interface AuthContextType {
   user: User | null;
   merchant: Merchant | null;
+  role: MerchantRole | null;
   loading: boolean;
   login: (phone: string, pin: string, otp?: string) => Promise<{ error?: string; code?: GuardCode }>;
   register: (phone: string, pin: string, name: string) => Promise<{ error?: string }>;
@@ -35,15 +37,19 @@ function pinToPassword(pin: string) {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [merchant, setMerchant] = useState<Merchant | null>(null);
+  const [role, setRole] = useState<MerchantRole | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchMerchant = useCallback(async (userId: string) => {
-    const { data } = await supabase
-      .from("merchants")
-      .select("id, phone_number, name, daily_sales_goal, approval_status")
-      .eq("user_id", userId)
-      .single();
+  const fetchMerchant = useCallback(async () => {
+    // Works for owners and staff: the database resolves both to a merchant.
+    const { data: merchantId } = await supabase.rpc("get_merchant_id");
+    if (!merchantId) { setMerchant(null); setRole(null); return; }
+    const [{ data }, { data: r }] = await Promise.all([
+      supabase.from("merchants").select("id, phone_number, name, daily_sales_goal, approval_status").eq("id", merchantId).single(),
+      supabase.rpc("merchant_role"),
+    ]);
     setMerchant(data);
+    setRole((r as MerchantRole) ?? null);
   }, []);
 
   useEffect(() => {
@@ -55,9 +61,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const u = session?.user ?? null;
       setUser(u);
       if (u) {
-        fetchMerchant(u.id);
+        fetchMerchant();
       } else {
-        setMerchant(null);
+        setMerchant(null); setRole(null);
       }
     });
 
@@ -69,12 +75,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!check.ok) {
           await supabase.auth.signOut();
           setUser(null);
-          setMerchant(null);
+          setMerchant(null); setRole(null);
           setLoading(false);
           initialised = true;
           return;
         }
-        fetchMerchant(u.id);
+        fetchMerchant();
       }
       setUser(u);
       setLoading(false);
@@ -86,7 +92,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!user) return;
-    const timer = setInterval(() => { sendDeviceHeartbeat(user.id); }, 5 * 60 * 1000);
+    const timer = setInterval(async () => {
+      const { disabled } = await sendDeviceHeartbeat(user.id);
+      if (disabled) await supabase.auth.signOut();
+    }, 5 * 60 * 1000);
     return () => clearInterval(timer);
   }, [user]);
 
@@ -131,7 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: "Failed to create merchant profile" };
       }
       await bindDeviceToUser(authData.user.id);
-      await fetchMerchant(authData.user.id);
+      await fetchMerchant();
     }
 
     return {};
@@ -140,11 +149,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     await supabase.auth.signOut();
     setUser(null);
-    setMerchant(null);
+    setMerchant(null); setRole(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, merchant, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, merchant, role, loading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

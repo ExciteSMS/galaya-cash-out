@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ArrowLeft, Plus, Package, AlertTriangle, Trash2, Pencil, ScanBarcode } from "lucide-react";
 import { toast } from "sonner";
+import BarcodeScanner, { scannerSupported } from "./BarcodeScanner";
 import { parseInventoryCsv } from "@/lib/inventoryCsv";
 
 interface Product {
@@ -26,6 +27,7 @@ export default function InventoryManager({ onBack }: { onBack: () => void }) {
   const [editing, setEditing] = useState<Product | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [scanning, setScanning] = useState(false);
 
   const load = async () => {
     if (!merchant) return;
@@ -163,7 +165,16 @@ export default function InventoryManager({ onBack }: { onBack: () => void }) {
               onChange={(e) => setForm({ ...form, sku: e.target.value })}
             />
             <div className="relative">
-              <ScanBarcode className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+              <button
+                type="button"
+                disabled={!scannerSupported()}
+                onClick={() => setScanning(true)}
+                aria-label="Scan barcode"
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground disabled:opacity-60"
+              >
+                <ScanBarcode className="w-4 h-4" />
+              </button>
+              {scanning && <BarcodeScanner onScan={(code) => { setForm((f) => ({ ...f, barcode: code })); setScanning(false); }} onClose={() => setScanning(false)} />}
               <input
                 className="w-full bg-muted border border-border rounded-lg pl-9 pr-3 py-2 text-sm text-foreground"
                 placeholder="Barcode"

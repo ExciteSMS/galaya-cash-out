@@ -292,6 +292,22 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    const { data: deviceOff } = await supabase.rpc("device_disabled");
+    if (deviceOff) {
+      return new Response(JSON.stringify({ error: "This device has been disabled by an administrator" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { data: canSell } = await supabase.rpc("has_merchant_perm", { p_perm: "sell" });
+    if (!canSell) {
+      return new Response(JSON.stringify({ error: "Your role cannot take payments" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { data: merchantData } = await supabase.rpc("get_merchant_id");
     if (!merchantData) {
       return new Response(JSON.stringify({ error: "Merchant profile not found" }), {

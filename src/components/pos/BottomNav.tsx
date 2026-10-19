@@ -1,4 +1,5 @@
 import { Home, PlusCircle, Clock, Wallet, Settings } from "lucide-react";
+import { useI18n, type MessageKey } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 export type Tab = "home" | "sale" | "history" | "wallet" | "settings";
@@ -9,15 +10,16 @@ interface BottomNavProps {
   pendingCount?: number;
 }
 
-const tabs: { id: Tab; label: string; icon: typeof Home }[] = [
-  { id: "home", label: "Home", icon: Home },
-  { id: "sale", label: "Sale", icon: PlusCircle },
-  { id: "history", label: "History", icon: Clock },
-  { id: "wallet", label: "Wallet", icon: Wallet },
-  { id: "settings", label: "Settings", icon: Settings },
+const tabs: { id: Tab; label: MessageKey; icon: typeof Home }[] = [
+  { id: "home", label: "nav.home", icon: Home },
+  { id: "sale", label: "nav.sale", icon: PlusCircle },
+  { id: "history", label: "nav.history", icon: Clock },
+  { id: "wallet", label: "nav.wallet", icon: Wallet },
+  { id: "settings", label: "nav.settings", icon: Settings },
 ];
 
 const BottomNav = ({ active, onNavigate, pendingCount = 0 }: BottomNavProps) => {
+  const { t } = useI18n();
   return (
     <nav className="bg-muted border-t border-border px-2">
       <div className="flex justify-around">
@@ -36,7 +38,7 @@ const BottomNav = ({ active, onNavigate, pendingCount = 0 }: BottomNavProps) => 
               )}
             >
               <tab.icon className={cn("w-4 h-4", tab.id === "sale" && "w-5 h-5")} />
-              <span className="font-medium uppercase tracking-wider">{tab.label}</span>
+              <span className="font-medium uppercase tracking-wider">{t(tab.label)}</span>
               {showBadge && (
                 <span className="absolute -top-0.5 right-1 w-4 h-4 bg-destructive text-destructive-foreground rounded-full text-[8px] font-bold flex items-center justify-center animate-pulse">
                   {pendingCount > 9 ? "9+" : pendingCount}

@@ -15,6 +15,8 @@ import PayoutAccounts from "./PayoutAccounts";
 import ExpenseTracker from "./ExpenseTracker";
 import SalesGoalSettings from "./SalesGoalSettings";
 import LoyaltyPoints from "./LoyaltyPoints";
+import { useI18n, LOCALE_NAMES, isLocale } from "@/lib/i18n";
+import { can, SETTINGS_PERMISSION } from "@/lib/permissions";
 import StaffAccounts from "./StaffAccounts";
 import ThemeToggle from "./ThemeToggle";
 import CustomerDirectory from "./CustomerDirectory";
@@ -29,7 +31,8 @@ import { getTransactions, Transaction } from "@/lib/api";
 type SettingsView = "main" | "profile" | "payments" | "notifications" | "help" | "payout" | "expenses" | "goal" | "loyalty" | "staff" | "customers" | "tip" | "split" | "offline" | "webhooks" | "referrals" | "zra" | "inventory" | "sales" | "parked" | "statements" | "inbox";
 
 const SettingsScreen = () => {
-  const { merchant, logout } = useAuth();
+  const { merchant, role, logout } = useAuth();
+  const { t, locale, setLocale } = useI18n();
   const features = useFeatureFlags();
   const [view, setView] = useState<SettingsView>("main");
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -83,13 +86,15 @@ const SettingsScreen = () => {
     { icon: HelpCircle, label: "Help & Support", desc: "FAQ, contact us", key: "help" as const, always: true },
   ];
 
-  const items = allItems.filter((item) => item.always || item.flag !== false);
+  const items = allItems
+    .filter((item) => item.always || item.flag !== false)
+    .filter((item) => !SETTINGS_PERMISSION[item.key] || can(role, SETTINGS_PERMISSION[item.key]));
 
   return (
     <div className="flex flex-col h-full p-4">
-      <h2 className="font-display font-bold text-lg text-foreground mb-1">Settings</h2>
+      <h2 className="font-display font-bold text-lg text-foreground mb-1">{t("settings.title")}</h2>
       <p className="text-xs text-muted-foreground mb-1">{merchant?.name} · {merchant?.phone_number}</p>
-      <p className="text-xs text-muted-foreground mb-6">Manage your POS</p>
+      <p className="text-xs text-muted-foreground mb-6">{t("settings.manage")}</p>
 
       <div className="flex flex-col gap-2">
         {items.map((item) => (
@@ -119,9 +124,21 @@ const SettingsScreen = () => {
         </div>
       )}
 
+      <div className="mt-4">
+        <p className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold mb-2">{t("settings.language")}</p>
+        <select
+          value={locale}
+          onChange={(e) => isLocale(e.target.value) && setLocale(e.target.value)}
+          className="bg-card border border-border rounded-lg px-3 py-2 text-sm"
+          aria-label={t("settings.language")}
+        >
+          {Object.entries(LOCALE_NAMES).map(([value, name]) => <option key={value} value={value}>{name}</option>)}
+        </select>
+      </div>
+
       <div className="mt-auto pt-6">
         <button onClick={logout} className="flex items-center gap-2 text-destructive text-sm font-medium hover:underline">
-          <LogOut className="w-4 h-4" /> Sign Out
+          <LogOut className="w-4 h-4" /> {t("settings.signOut")}
         </button>
         <p className="text-[10px] text-muted-foreground mt-3">Galaya Payment Solution v2.0</p>
       </div>

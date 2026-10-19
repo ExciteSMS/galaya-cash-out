@@ -231,6 +231,19 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    if (body.receipt_to) {
+      const cfg = await getSmsSettings();
+      if (!cfg.enabled || !cfg.apiKey) {
+        return new Response(JSON.stringify({ sent: false, reason: "SMS not enabled" }), {
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const ok = await sendSms(cfg.apiKey, cfg.senderId, String(body.receipt_to), String(body.message).slice(0, 320));
+      return new Response(JSON.stringify({ sent: true, results: { receipt: ok } }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const {
       merchant_phone,
       merchant_name,

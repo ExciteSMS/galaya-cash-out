@@ -144,7 +144,7 @@ export async function bindDeviceToUser(userId: string) {
 }
 
 /** Refreshes last_seen, location and battery for the bound device. Safe to call repeatedly. */
-export async function sendDeviceHeartbeat(userId: string) {
+export async function sendDeviceHeartbeat(userId: string): Promise<{ disabled: boolean }> {
   const device_id = await getDeviceId();
   const telemetry = await collectTelemetry();
   const update: Record<string, unknown> = { last_seen: new Date().toISOString(), app_online: true };
@@ -158,12 +158,14 @@ export async function sendDeviceHeartbeat(userId: string) {
     update.location_accuracy = telemetry.location_accuracy;
     update.location_updated_at = telemetry.location_updated_at;
   }
-  await supabase
+  const { data } = await supabase
     .from("user_devices")
     .update(update)
     .eq("user_id", userId)
     .eq("device_id", device_id)
-    .eq("is_active", true);
+    .eq("is_active", true)
+    .select("remote_disabled");
+  return { disabled: !!data?.some((d) => d.remote_disabled) };
 }
 
 /**
@@ -177,7 +179,7 @@ export async function verifyDeviceForUser(userId: string): Promise<{ ok: boolean
 
   const { data: devices, error } = await supabase
     .from("user_devices")
-    .select("id, device_id, is_bound, is_active")
+    .select("id, device_id, is_bound, is_active, remote_disabled")
     .eq("user_id", userId);
   if (error) return { ok: false, reason: "Could not verify this device. Please try again." };
 
@@ -195,13 +197,16 @@ export async function verifyDeviceForUser(userId: string): Promise<{ ok: boolean
         user_id: userId, ...baseFields(device_id), ...telemetry, is_bound: false, is_active: true,
       });
     }
+    // Ask the admin to approve a move to this device; ignored if a request is already pending.
+    await supabase.rpc("request_device_transfer", { p_device_id: device_id });
     return {
       ok: false,
-      reason: "This account is already linked to another device. Contact support to transfer.",
+      reason: "This account is linked to another device. A transfer request has been sent to the admin.",
     };
   }
 
   if (bound) {
+    if (bound.remote_disabled) return { ok: false, reason: "This device has been disabled by an administrator." };
     await sendDeviceHeartbeat(userId);
     return { ok: true };
   }

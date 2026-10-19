@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { ArrowLeft, UserPlus, Users, Shield, ShieldCheck, ToggleLeft, ToggleRight, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { ROLE_LABELS } from "@/lib/permissions";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,7 @@ interface StaffMember {
   name: string;
   phone: string;
   role: string;
+  user_id: string | null;
   is_active: boolean;
   last_login: string | null;
   created_at: string;
@@ -19,6 +21,15 @@ interface StaffMember {
 
 interface StaffAccountsProps {
   onBack: () => void;
+}
+
+async function callStaffAdmin(body: Record<string, unknown>): Promise<{ error?: string }> {
+  const { data, error } = await supabase.functions.invoke("staff-admin", { body });
+  if (error) {
+    const detail = await (error as { context?: Response }).context?.json?.().catch(() => null);
+    return { error: detail?.error ?? "Request failed" };
+  }
+  return data?.error ? { error: data.error } : {};
 }
 
 const StaffAccounts = ({ onBack }: StaffAccountsProps) => {
@@ -54,31 +65,38 @@ const StaffAccounts = ({ onBack }: StaffAccountsProps) => {
       return;
     }
 
-    const { error } = await supabase.from("merchant_staff").insert({
-      merchant_id: merchant.id,
-      name,
-      phone,
-      pin_hash: pin, // In production, hash this
-      role,
-    });
-
-    if (error) { toast.error("Failed to add staff"); return; }
+    const { error } = await callStaffAdmin({ action: "create", name, phone, pin, role });
+    if (error) { toast.error(error); return; }
     toast.success(`${name} added as ${role}`);
     setName(""); setPhone(""); setPin(""); setRole("cashier"); setShowAdd(false);
     fetchStaff();
   };
 
   const toggleActive = async (s: StaffMember) => {
-    await supabase
-      .from("merchant_staff")
-      .update({ is_active: !s.is_active })
-      .eq("id", s.id);
+    const { error } = await callStaffAdmin({ action: "update", id: s.id, is_active: !s.is_active });
+    if (error) return toast.error(error);
     toast.success(`${s.name} ${s.is_active ? "deactivated" : "activated"}`);
     fetchStaff();
   };
 
+  const changeRole = async (s: StaffMember, next: string) => {
+    const { error } = await callStaffAdmin({ action: "update", id: s.id, role: next });
+    if (error) return toast.error(error);
+    fetchStaff();
+  };
+
+  const resetPin = async (s: StaffMember) => {
+    const next = window.prompt(`New 4-digit PIN for ${s.name}`);
+    if (!next) return;
+    const { error } = await callStaffAdmin({ action: "update", id: s.id, pin: next });
+    if (error) return toast.error(error);
+    toast.success("PIN updated");
+    fetchStaff();
+  };
+
   const handleDelete = async (s: StaffMember) => {
-    await supabase.from("merchant_staff").delete().eq("id", s.id);
+    const { error } = await callStaffAdmin({ action: "delete", id: s.id });
+    if (error) return toast.error(error);
     toast.success(`${s.name} removed`);
     fetchStaff();
   };
@@ -109,9 +127,9 @@ const StaffAccounts = ({ onBack }: StaffAccountsProps) => {
           <Select value={role} onValueChange={setRole}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="cashier">Cashier</SelectItem>
-              <SelectItem value="manager">Manager</SelectItem>
-              <SelectItem value="supervisor">Supervisor</SelectItem>
+              {Object.entries(ROLE_LABELS).map(([value, label]) => (
+                <SelectItem key={value} value={value}>{label}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <div className="flex gap-2">
@@ -143,9 +161,17 @@ const StaffAccounts = ({ onBack }: StaffAccountsProps) => {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{s.name}</p>
-                <p className="text-[10px] text-muted-foreground">{s.phone} · {s.role}</p>
+                <p className="text-[10px] text-muted-foreground">{s.phone}{s.user_id ? "" : " · login not set up"}</p>
+                <select
+                  value={s.role}
+                  onChange={(e) => changeRole(s, e.target.value)}
+                  className="mt-1 text-[10px] bg-transparent border border-border rounded px-1 py-0.5"
+                >
+                  {Object.entries(ROLE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
               </div>
               <div className="flex items-center gap-1">
+                <button onClick={() => resetPin(s)} className="p-1 hover:bg-muted rounded text-[10px] text-muted-foreground" title="Reset PIN">PIN</button>
                 <button onClick={() => toggleActive(s)} className="p-1 hover:bg-muted rounded" title={s.is_active ? "Deactivate" : "Activate"}>
                   {s.is_active ? <ToggleRight className="w-5 h-5 text-primary" /> : <ToggleLeft className="w-5 h-5 text-muted-foreground" />}
                 </button>

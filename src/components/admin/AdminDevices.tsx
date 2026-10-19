@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Smartphone, Unlink, RefreshCw } from "lucide-react";
+import { Smartphone, Unlink, RefreshCw, Ban, MapPin, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/adminApi";
 import { deviceFaults } from "@/lib/deviceHealth";
@@ -23,8 +23,55 @@ interface DeviceRow {
   location_status: string | null;
   battery_level: number | null;
   is_charging: boolean | null;
+  remote_disabled: boolean;
+  geofence_lat: number | null;
+  geofence_lng: number | null;
+  geofence_radius_m: number | null;
+  outside_geofence: boolean;
   merchant_name?: string;
   merchant_phone?: string;
+}
+
+interface TransferRequest { id: string; user_id: string; created_at: string; user_devices: { device_name: string | null; platform: string | null } | null }
+
+function TransferRequests({ onResolved }: { onResolved: () => void }) {
+  const [items, setItems] = useState<(TransferRequest & { name?: string })[]>([]);
+
+  const load = async () => {
+    const { data } = await supabase.from("device_transfer_requests")
+      .select("id, user_id, created_at, user_devices:new_device_row_id(device_name, platform)")
+      .eq("status", "pending").order("created_at");
+    const reqs = (data ?? []) as unknown as TransferRequest[];
+    const { data: merchants } = await supabase.from("merchants").select("user_id, name").in("user_id", reqs.map((r) => r.user_id));
+    const names = new Map((merchants ?? []).map((m) => [m.user_id, m.name]));
+    setItems(reqs.map((r) => ({ ...r, name: names.get(r.user_id) })));
+  };
+  useEffect(() => { load(); }, []);
+
+  const resolve = async (id: string, approve: boolean) => {
+    const { error } = await supabase.rpc("resolve_device_transfer", { p_id: id, p_approve: approve });
+    if (error) return toast.error(error.message);
+    await logAudit(approve ? "device_transfer_approve" : "device_transfer_reject", "device_transfer", id, {});
+    toast.success(approve ? "Device transferred" : "Request rejected");
+    load();
+    onResolved();
+  };
+
+  if (!items.length) return null;
+  return (
+    <div className="border border-amber-500/40 bg-amber-500/5 rounded-lg p-3 space-y-2">
+      <p className="text-sm font-semibold">Device transfer requests ({items.length})</p>
+      {items.map((r) => (
+        <div key={r.id} className="flex items-center justify-between gap-2 text-xs">
+          <span>{r.name ?? r.user_id} wants to move to {r.user_devices?.device_name ?? "a new device"} ({r.user_devices?.platform ?? "unknown"})</span>
+          <span className="flex gap-1">
+            <button onClick={() => resolve(r.id, true)} className="inline-flex items-center gap-1 px-2 py-1 rounded border border-border hover:bg-primary/10"><Check className="h-3 w-3" /> Approve</button>
+            <button onClick={() => resolve(r.id, false)} className="inline-flex items-center gap-1 px-2 py-1 rounded border border-border hover:bg-destructive/10"><X className="h-3 w-3" /> Reject</button>
+          </span>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default function AdminDevices() {
@@ -77,6 +124,38 @@ export default function AdminDevices() {
     load();
   };
 
+  const toggleDisabled = async (row: DeviceRow) => {
+    const disabling = !row.remote_disabled;
+    if (disabling && !confirm(`Disable this device for ${row.merchant_name ?? row.user_id}? It will be signed out and unable to take payments.`)) return;
+    const { error } = await supabase.from("user_devices")
+      .update({ remote_disabled: disabling, remote_disabled_at: disabling ? new Date().toISOString() : null })
+      .eq("id", row.id);
+    if (error) return toast.error(error.message);
+    await logAudit(disabling ? "device_disable" : "device_enable", "user_device", row.id, { user_id: row.user_id });
+    toast.success(disabling ? "Device disabled" : "Device enabled");
+    load();
+  };
+
+  const setGeofence = async (row: DeviceRow) => {
+    if (row.geofence_radius_m) {
+      const { error } = await supabase.from("user_devices")
+        .update({ geofence_lat: null, geofence_lng: null, geofence_radius_m: null }).eq("id", row.id);
+      if (error) return toast.error(error.message);
+      toast.success("Geofence removed");
+      return load();
+    }
+    if (row.latitude == null || row.longitude == null) return toast.error("This device has not reported a location yet");
+    const input = prompt("Allowed radius around the device's current location, in metres (50 – 200000)", "500");
+    const radius = Number(input);
+    if (!input || !Number.isInteger(radius) || radius < 50 || radius > 200000) return;
+    const { error } = await supabase.from("user_devices")
+      .update({ geofence_lat: row.latitude, geofence_lng: row.longitude, geofence_radius_m: radius }).eq("id", row.id);
+    if (error) return toast.error(error.message);
+    await logAudit("device_geofence_set", "user_device", row.id, { radius });
+    toast.success("Geofence set");
+    load();
+  };
+
   const filtered = rows.filter((r) => {
     const q = query.trim().toLowerCase();
     if (!q) return true;
@@ -104,6 +183,8 @@ export default function AdminDevices() {
           <RefreshCw className="h-3.5 w-3.5" /> Refresh
         </button>
       </div>
+
+      <TransferRequests onResolved={load} />
 
       <input
         type="text"
@@ -178,16 +259,32 @@ export default function AdminDevices() {
                   })()}
                 </td>
                 <td className="px-3 py-2 text-xs">
+                  {r.remote_disabled && <span className="px-2 py-0.5 rounded bg-destructive/10 text-destructive mr-1">Disabled</span>}
+                  {r.outside_geofence && <span className="px-2 py-0.5 rounded bg-destructive/10 text-destructive mr-1" title="Outside its allowed area">Out of area</span>}
                   {r.is_bound ? (
                     <span className="px-2 py-0.5 rounded bg-primary/10 text-primary">Bound</span>
                   ) : (
                     <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-600" title="A login from this device was blocked because the account is bound elsewhere">Blocked attempt</span>
                   )}
                 </td>
-                <td className="px-3 py-2 text-right">
+                <td className="px-3 py-2 text-right space-x-1 whitespace-nowrap">
+                  {r.is_bound && <button
+                    onClick={() => toggleDisabled(r)}
+                    className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded border border-border hover:bg-destructive/10"
+                    title={r.remote_disabled ? "Allow this device again" : "Disable this device remotely"}
+                  >
+                    <Ban className="h-3 w-3" /> {r.remote_disabled ? "Enable" : "Disable"}
+                  </button>}
+                  {r.is_bound && <button
+                    onClick={() => setGeofence(r)}
+                    className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded border border-border hover:bg-muted"
+                    title="Alert when the device leaves its current area"
+                  >
+                    <MapPin className="h-3 w-3" /> {r.geofence_radius_m ? `Geofence ${r.geofence_radius_m}m ✕` : "Geofence"}
+                  </button>}
                   {r.is_bound && <button
                     onClick={() => release(r)}
-                    className="flex items-center gap-1 px-2 py-1 text-xs rounded border border-border hover:bg-destructive/10 hover:text-destructive"
+                    className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded border border-border hover:bg-destructive/10 hover:text-destructive"
                     title="Release binding so the merchant can sign in from a new device"
                   >
                     <Unlink className="h-3 w-3" /> Release
