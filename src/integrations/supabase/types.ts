@@ -736,6 +736,45 @@ export type Database = {
           },
         ]
       }
+      outbox: {
+        Row: {
+          attempts: number
+          created_at: string
+          dedupe_key: string
+          id: string
+          kind: string
+          last_error: string | null
+          next_attempt_at: string
+          payload: Json
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          dedupe_key: string
+          id?: string
+          kind: string
+          last_error?: string | null
+          next_attempt_at?: string
+          payload?: Json
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          dedupe_key?: string
+          id?: string
+          kind?: string
+          last_error?: string | null
+          next_attempt_at?: string
+          payload?: Json
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       parked_sales: {
         Row: {
           created_at: string
@@ -1249,8 +1288,42 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_outbox: {
+        Args: { p_limit?: number }
+        Returns: {
+          attempts: number
+          created_at: string
+          dedupe_key: string
+          id: string
+          kind: string
+          last_error: string | null
+          next_attempt_at: string
+          payload: Json
+          status: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "outbox"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       decrement_product_stock: {
         Args: { p_product_id: string; p_qty: number }
+        Returns: undefined
+      }
+      enqueue_outbox: {
+        Args: { p_key: string; p_kind: string; p_payload: Json }
+        Returns: undefined
+      }
+      enqueue_webhooks: {
+        Args: {
+          p_data: Json
+          p_event: string
+          p_merchant: string
+          p_ref: string
+        }
         Returns: undefined
       }
       get_merchant_id: { Args: never; Returns: string }

@@ -40,23 +40,6 @@ async function authorised(req: Request): Promise<boolean> {
   return false;
 }
 
-async function notifySuccess(txId: string) {
-  const { data: tx } = await admin.from("transactions").select("*, merchants(name, phone_number)").eq("id", txId).single();
-  if (!tx) return;
-  const headers = { "Content-Type": "application/json", Authorization: `Bearer ${serviceKey}` };
-  fetch(`${url}/functions/v1/zra-invoice`, {
-    method: "POST", headers, body: JSON.stringify({ action: "sale", transaction_id: txId }),
-  }).catch((e) => console.error("ZRA trigger error:", e));
-  const m = tx.merchants as { name?: string; phone_number?: string } | null;
-  fetch(`${url}/functions/v1/send-sms`, {
-    method: "POST", headers,
-    body: JSON.stringify({
-      merchant_phone: m?.phone_number, merchant_name: m?.name, customer_phone: tx.phone,
-      amount: tx.amount, reference: tx.reference, provider: tx.provider,
-    }),
-  }).catch((e) => console.error("SMS trigger error:", e));
-}
-
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
@@ -99,7 +82,6 @@ Deno.serve(async (req: Request) => {
       if (flipped && flipped.length > 0) {
         if (status === "success") {
           summary.succeeded++;
-          await notifySuccess(tx.id);
         } else {
           summary.failed++;
         }
