@@ -52,7 +52,7 @@ const OfflineQueue = ({ onBack }: { onBack: () => void }) => {
     const updated = [...queue];
     for (const sale of updated.filter((s) => !s.synced)) {
       try {
-        const r = await processPayment(merchant.id, sale.provider, sale.phone, sale.amount);
+        const r = await processPayment(merchant.id, sale.provider, sale.phone, sale.amount, sale.id);
         if (r.success) sale.synced = true;
       } catch (e: any) {
         toast.error(`Sync failed for ${sale.phone}`);

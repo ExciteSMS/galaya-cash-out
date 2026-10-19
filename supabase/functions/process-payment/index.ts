@@ -262,7 +262,14 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const { provider, phone, amount } = await req.json();
+    const { provider, phone, amount, idempotency_key } = await req.json();
+
+    if (idempotency_key !== undefined && (typeof idempotency_key !== "string" || !/^[\w-]{8,100}$/.test(idempotency_key))) {
+      return new Response(JSON.stringify({ error: "Invalid idempotency key" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     if (!provider || !phone || !amount) {
       return new Response(JSON.stringify({ error: "Missing provider, phone, or amount" }), {
@@ -293,6 +300,29 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // A retry or double tap with the same key returns the original transaction instead of charging again.
+    const replay = async () => {
+      if (!idempotency_key) return null;
+      const { data: existing } = await db
+        .from("transactions")
+        .select("*")
+        .eq("merchant_id", merchantData)
+        .eq("idempotency_key", idempotency_key)
+        .maybeSingle();
+      if (!existing) return null;
+      const failed = existing.status === "failed";
+      return new Response(JSON.stringify({
+        transaction: existing,
+        success: !failed,
+        error: failed ? "Payment request failed" : undefined,
+        transaction_id: existing.reference,
+        gateway: existing.gateway,
+        idempotent_replay: true,
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    };
+    const replayed = await replay();
+    if (replayed) return replayed;
+
     // Determine active gateway
     const { gateway, credentials } = await getActiveGateway(supabase);
     if (gateway === "none") {
@@ -317,11 +347,17 @@ Deno.serve(async (req: Request) => {
         fee,
         status: "pending",
         reference,
+        gateway,
+        idempotency_key: idempotency_key ?? null,
       })
       .select()
       .single();
 
     if (insertError) {
+      if (insertError.code === "23505") {
+        const raced = await replay();
+        if (raced) return raced;
+      }
       console.error("Insert error:", insertError);
       return new Response(JSON.stringify({ error: "Failed to create transaction" }), {
         status: 500,

@@ -1037,3 +1037,49 @@ DROP TRIGGER IF EXISTS guard_merchants_write ON public.merchants;
 CREATE TRIGGER guard_merchants_write BEFORE INSERT OR UPDATE ON public.merchants
   FOR EACH ROW EXECUTE FUNCTION public.guard_merchants_write();
 
+
+-- ===== drizzle/migrations/0008_payment_idempotency_reconcile.sql =====
+-- Idempotent payment requests and reconciliation bookkeeping.
+ALTER TABLE public.transactions
+  ADD COLUMN IF NOT EXISTS idempotency_key text,
+  ADD COLUMN IF NOT EXISTS gateway text,
+  ADD COLUMN IF NOT EXISTS reconciled_at timestamptz,
+  ADD COLUMN IF NOT EXISTS reconcile_attempts integer NOT NULL DEFAULT 0;
+
+-- One charge per (merchant, key): a retry or double tap returns the original transaction.
+CREATE UNIQUE INDEX IF NOT EXISTS transactions_idempotency_key_uniq
+  ON public.transactions (merchant_id, idempotency_key)
+  WHERE idempotency_key IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS transactions_pending_idx
+  ON public.transactions (created_at) WHERE status = 'pending';
+
+CREATE OR REPLACE FUNCTION public.touch_reconcile(p_id uuid)
+RETURNS void LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$
+  UPDATE public.transactions
+  SET reconcile_attempts = reconcile_attempts + 1, reconciled_at = now()
+  WHERE id = p_id AND status = 'pending';
+$$;
+REVOKE ALL ON FUNCTION public.touch_reconcile(uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.touch_reconcile(uuid) TO service_role;
+
+
+-- ===== drizzle/migrations/0009_schedule_reconcile.sql =====
+-- Runs reconcile-payments every 5 minutes. The callback_secret is read at run time, so no secret lives in the job text.
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+CREATE EXTENSION IF NOT EXISTS pg_net;
+
+SELECT cron.unschedule('reconcile-payments') WHERE EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'reconcile-payments');
+SELECT cron.schedule(
+  'reconcile-payments',
+  '*/5 * * * *',
+  $job$
+  SELECT net.http_post(
+    url := 'https://biyopyqclxzocchowpwo.supabase.co/functions/v1/reconcile-payments?token='
+           || (SELECT value FROM public.app_settings WHERE key = 'callback_secret'),
+    headers := '{"Content-Type":"application/json"}'::jsonb,
+    body := '{}'::jsonb
+  );
+  $job$
+);
+

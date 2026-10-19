@@ -995,12 +995,16 @@ export type Database = {
           city: string | null
           created_at: string
           fee: number
+          gateway: string | null
           id: string
+          idempotency_key: string | null
           lat: number | null
           lng: number | null
           merchant_id: string
           phone: string
           provider: string
+          reconcile_attempts: number
+          reconciled_at: string | null
           reference: string | null
           split_group_id: string | null
           status: string
@@ -1012,12 +1016,16 @@ export type Database = {
           city?: string | null
           created_at?: string
           fee?: number
+          gateway?: string | null
           id?: string
+          idempotency_key?: string | null
           lat?: number | null
           lng?: number | null
           merchant_id: string
           phone: string
           provider: string
+          reconcile_attempts?: number
+          reconciled_at?: string | null
           reference?: string | null
           split_group_id?: string | null
           status?: string
@@ -1029,12 +1037,16 @@ export type Database = {
           city?: string | null
           created_at?: string
           fee?: number
+          gateway?: string | null
           id?: string
+          idempotency_key?: string | null
           lat?: number | null
           lng?: number | null
           merchant_id?: string
           phone?: string
           provider?: string
+          reconcile_attempts?: number
+          reconciled_at?: string | null
           reference?: string | null
           split_group_id?: string | null
           status?: string
@@ -1249,6 +1261,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      touch_reconcile: { Args: { p_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "user"

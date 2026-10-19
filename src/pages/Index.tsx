@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import BottomNav, { Tab } from "@/components/pos/BottomNav";
 import Dashboard from "@/components/pos/Dashboard";
 import NewSale from "@/components/pos/NewSale";
@@ -11,7 +11,7 @@ import SettingsScreen from "@/components/pos/SettingsScreen";
 import AuthScreen from "@/components/pos/AuthScreen";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Provider, Transaction, processPayment, getTransactions, detectProvider } from "@/lib/api";
+import { Provider, Transaction, processPayment, newIdempotencyKey, getTransactions, detectProvider } from "@/lib/api";
 import { toast } from "sonner";
 
 type SaleFlow = "idle" | "new" | "products" | "ussd" | "receipt";
@@ -34,6 +34,9 @@ const Index = () => {
     getTransactions().then(setTransactions).catch(console.error);
   }, [merchant]);
 
+  // Kept until the request gets an answer, so a double tap or a retry after a network error can't charge twice.
+  const paymentKeyRef = useRef<{ sig: string; key: string } | null>(null);
+
   const handleStartPayment = async (p: Provider, ph: string, amt: number) => {
     setProvider(p);
     setPhone(ph);
@@ -43,7 +46,10 @@ const Index = () => {
 
     try {
       // Call MoneyUnify Request to Pay
-      const result = await processPayment(merchant.id, p, ph, amt);
+      const sig = `${p}|${ph}|${amt}`;
+      if (paymentKeyRef.current?.sig !== sig) paymentKeyRef.current = { sig, key: newIdempotencyKey() };
+      const result = await processPayment(merchant.id, p, ph, amt, paymentKeyRef.current.key);
+      paymentKeyRef.current = null;
 
       if (result.success && result.transaction_id) {
         setTransaction(result.transaction);

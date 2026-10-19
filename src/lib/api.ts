@@ -48,16 +48,23 @@ export interface PaymentResult {
   error?: string;
   transaction_id?: string;
   moneyunify_status?: string;
+  idempotent_replay?: boolean;
+}
+
+/** Same key = same charge. Create one per user intent and reuse it for retries. */
+export function newIdempotencyKey(): string {
+  return crypto.randomUUID();
 }
 
 export async function processPayment(
   merchantId: string,
   provider: Provider,
   phone: string,
-  amount: number
+  amount: number,
+  idempotencyKey: string = newIdempotencyKey()
 ): Promise<PaymentResult> {
   const { data, error } = await supabase.functions.invoke("process-payment", {
-    body: { provider, phone, amount },
+    body: { provider, phone, amount, idempotency_key: idempotencyKey },
   });
 
   if (error) throw new Error(error.message);
