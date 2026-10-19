@@ -1,38 +1,38 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
 import { Navigate } from "react-router-dom";
-import AdminDashboard from "@/components/admin/AdminDashboard";
-import AdminTransactions from "@/components/admin/AdminTransactions";
-import AdminMerchants from "@/components/admin/AdminMerchants";
-import AdminDisbursements from "@/components/admin/AdminDisbursements";
-import AdminSettings from "@/components/admin/AdminSettings";
-import AdminAuditLog from "@/components/admin/AdminAuditLog";
-import AdminFraudFreeze from "@/components/admin/AdminFraudFreeze";
-import AdminPlatformAnalytics from "@/components/admin/AdminPlatformAnalytics";
-import AdminRefunds from "@/components/admin/AdminRefunds";
-import AdminFraudAlerts from "@/components/admin/AdminFraudAlerts";
-import AdminAnalytics from "@/components/admin/AdminAnalytics";
-import AdminUsers from "@/components/admin/AdminUsers";
-import AdminDevices from "@/components/admin/AdminDevices";
-import AdminApprovals from "@/components/admin/AdminApprovals";
-import AdminCharges from "@/components/admin/AdminCharges";
-import AdminPOSFeatures from "@/components/admin/AdminPOSFeatures";
-import AdminBroadcast from "@/components/admin/AdminBroadcast";
-import AdminRevenueReports from "@/components/admin/AdminRevenueReports";
-import AdminSystemHealth from "@/components/admin/AdminSystemHealth";
-import AdminActivityFeed from "@/components/admin/AdminActivityFeed";
-import AdminRolePermissions from "@/components/admin/AdminRolePermissions";
-import AdminOnboardingPipeline from "@/components/admin/AdminOnboardingPipeline";
-import AdminScheduledReports from "@/components/admin/AdminScheduledReports";
-import AdminActionNotifications from "@/components/admin/AdminActionNotifications";
-import AdminFeeSimulator from "@/components/admin/AdminFeeSimulator";
-import AdminGeoHeatmap from "@/components/admin/AdminGeoHeatmap";
-import AdminRiskScoring from "@/components/admin/AdminRiskScoring";
-import AdminFeatureRollouts from "@/components/admin/AdminFeatureRollouts";
-import AdminSupportInbox from "@/components/admin/AdminSupportInbox";
-import AdminCustomSMS from "@/components/admin/AdminCustomSMS";
-import AdminZraInvoices from "@/components/admin/AdminZraInvoices";
+const AdminDashboard = lazy(() => import("@/components/admin/AdminDashboard"));
+const AdminTransactions = lazy(() => import("@/components/admin/AdminTransactions"));
+const AdminMerchants = lazy(() => import("@/components/admin/AdminMerchants"));
+const AdminDisbursements = lazy(() => import("@/components/admin/AdminDisbursements"));
+const AdminSettings = lazy(() => import("@/components/admin/AdminSettings"));
+const AdminAuditLog = lazy(() => import("@/components/admin/AdminAuditLog"));
+const AdminFraudFreeze = lazy(() => import("@/components/admin/AdminFraudFreeze"));
+const AdminPlatformAnalytics = lazy(() => import("@/components/admin/AdminPlatformAnalytics"));
+const AdminRefunds = lazy(() => import("@/components/admin/AdminRefunds"));
+const AdminFraudAlerts = lazy(() => import("@/components/admin/AdminFraudAlerts"));
+const AdminAnalytics = lazy(() => import("@/components/admin/AdminAnalytics"));
+const AdminUsers = lazy(() => import("@/components/admin/AdminUsers"));
+const AdminDevices = lazy(() => import("@/components/admin/AdminDevices"));
+const AdminApprovals = lazy(() => import("@/components/admin/AdminApprovals"));
+const AdminCharges = lazy(() => import("@/components/admin/AdminCharges"));
+const AdminPOSFeatures = lazy(() => import("@/components/admin/AdminPOSFeatures"));
+const AdminBroadcast = lazy(() => import("@/components/admin/AdminBroadcast"));
+const AdminRevenueReports = lazy(() => import("@/components/admin/AdminRevenueReports"));
+const AdminSystemHealth = lazy(() => import("@/components/admin/AdminSystemHealth"));
+const AdminActivityFeed = lazy(() => import("@/components/admin/AdminActivityFeed"));
+const AdminRolePermissions = lazy(() => import("@/components/admin/AdminRolePermissions"));
+const AdminOnboardingPipeline = lazy(() => import("@/components/admin/AdminOnboardingPipeline"));
+const AdminScheduledReports = lazy(() => import("@/components/admin/AdminScheduledReports"));
+const AdminActionNotifications = lazy(() => import("@/components/admin/AdminActionNotifications"));
+const AdminFeeSimulator = lazy(() => import("@/components/admin/AdminFeeSimulator"));
+const AdminGeoHeatmap = lazy(() => import("@/components/admin/AdminGeoHeatmap"));
+const AdminRiskScoring = lazy(() => import("@/components/admin/AdminRiskScoring"));
+const AdminFeatureRollouts = lazy(() => import("@/components/admin/AdminFeatureRollouts"));
+const AdminSupportInbox = lazy(() => import("@/components/admin/AdminSupportInbox"));
+const AdminCustomSMS = lazy(() => import("@/components/admin/AdminCustomSMS"));
+const AdminZraInvoices = lazy(() => import("@/components/admin/AdminZraInvoices"));
 import {
   LayoutDashboard, ArrowLeftRight, Users, Settings, LogOut, Shield,
   ArrowDownToLine, ScrollText, RotateCcw, ShieldAlert, BarChart3,
@@ -179,6 +179,7 @@ export default function Admin() {
       </aside>
 
       <main className="flex-1 p-3 md:p-6 overflow-auto min-h-0">
+        <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
         {activeTab === "dashboard" && <AdminDashboard />}
         {activeTab === "analytics" && <AdminAnalytics />}
         {activeTab === "transactions" && <AdminTransactions />}
@@ -210,6 +211,7 @@ export default function Admin() {
         {activeTab === "risk" && <AdminRiskScoring />}
         {activeTab === "rollouts" && <AdminFeatureRollouts />}
         {activeTab === "support" && <AdminSupportInbox />}
+        </Suspense>
       </main>
     </div>
   );

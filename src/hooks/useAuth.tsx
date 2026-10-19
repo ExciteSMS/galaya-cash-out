@@ -1,7 +1,8 @@
 import { useState, useEffect, createContext, useContext, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
-import { bindDeviceToUser, verifyDeviceForUser } from "@/lib/deviceId";
+import { guardedLogin, type GuardCode } from "@/lib/authGuard";
+import { bindDeviceToUser, verifyDeviceForUser, sendDeviceHeartbeat } from "@/lib/deviceId";
 
 interface Merchant {
   id: string;
@@ -15,7 +16,7 @@ interface AuthContextType {
   user: User | null;
   merchant: Merchant | null;
   loading: boolean;
-  login: (phone: string, pin: string) => Promise<{ error?: string }>;
+  login: (phone: string, pin: string, otp?: string) => Promise<{ error?: string; code?: GuardCode }>;
   register: (phone: string, pin: string, name: string) => Promise<{ error?: string }>;
   logout: () => Promise<void>;
 }
@@ -83,14 +84,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, [fetchMerchant]);
 
-  const login = async (phone: string, pin: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: phoneToEmail(phone),
-      password: pinToPassword(pin),
-    });
-    if (error) return { error: "Invalid phone or PIN" };
-    if (data.user) {
-      const check = await verifyDeviceForUser(data.user.id);
+  useEffect(() => {
+    if (!user) return;
+    const timer = setInterval(() => { sendDeviceHeartbeat(user.id); }, 5 * 60 * 1000);
+    return () => clearInterval(timer);
+  }, [user]);
+
+  const login = async (phone: string, pin: string, otp?: string) => {
+    const result = await guardedLogin(phone, pin, otp);
+    if (!result.ok) return { error: result.error ?? "Invalid phone or PIN", code: result.code };
+    const { data: { user: signedIn } } = await supabase.auth.getUser();
+    if (signedIn) {
+      const check = await verifyDeviceForUser(signedIn.id);
       if (!check.ok) {
         await supabase.auth.signOut();
         return { error: check.reason || "Device not authorised" };

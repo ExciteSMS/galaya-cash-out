@@ -250,6 +250,8 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_ANON_KEY")!,
       { global: { headers: { Authorization: authHeader } } }
     );
+    // Transaction writes use the service role; merchants can't write transactions directly.
+    const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
@@ -305,7 +307,7 @@ Deno.serve(async (req: Request) => {
     const reference = generateRef();
 
     // Create pending transaction
-    const { data: txData, error: insertError } = await supabase
+    const { data: txData, error: insertError } = await db
       .from("transactions")
       .insert({
         merchant_id: merchantId,
@@ -338,7 +340,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (!result.success) {
-      await supabase.from("transactions").update({ status: "failed" }).eq("id", txData.id);
+      await db.from("transactions").update({ status: "failed" }).eq("id", txData.id);
     }
 
     // Run fraud detection asynchronously (fire and forget)
@@ -372,7 +374,7 @@ Deno.serve(async (req: Request) => {
 
     // Update reference with gateway transaction ID
     const gatewayTxId = result.transaction_id;
-    await supabase.from("transactions").update({ reference: gatewayTxId || reference }).eq("id", txData.id);
+    await db.from("transactions").update({ reference: gatewayTxId || reference }).eq("id", txData.id);
 
     return new Response(JSON.stringify({
       transaction: { ...txData, reference: gatewayTxId || reference },

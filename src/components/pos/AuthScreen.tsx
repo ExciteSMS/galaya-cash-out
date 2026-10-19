@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { validatePhone } from "@/lib/mockApi";
-import { Delete, Phone, Lock, UserPlus, LogIn } from "lucide-react";
+import { Delete, Phone, Lock, UserPlus, LogIn, ShieldCheck } from "lucide-react";
+import { requestOtp, resetPin } from "@/lib/authGuard";
 
 type Mode = "login" | "register";
-type Step = "phone" | "pin" | "name";
+type Step = "phone" | "pin" | "name" | "otp" | "newpin";
 
 const AuthScreen = () => {
   const { login, register } = useAuth();
@@ -13,6 +14,10 @@ const AuthScreen = () => {
   const [phone, setPhone] = useState("");
   const [pin, setPin] = useState("");
   const [name, setName] = useState("");
+  const [otp, setOtp] = useState("");
+  const [newPin, setNewPin] = useState("");
+  const [resetting, setResetting] = useState(false);
+  const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -29,12 +34,29 @@ const AuthScreen = () => {
           setStep("name");
         }
       }
+    } else if (step === "otp" && otp.length < 6) {
+      const next = otp + key;
+      setOtp(next);
+      if (next.length === 6) {
+        if (resetting) {
+          setStep("newpin");
+          setError("");
+        } else {
+          handleLogin(pin, next);
+        }
+      }
+    } else if (step === "newpin" && newPin.length < 4) {
+      const next = newPin + key;
+      setNewPin(next);
+      if (next.length === 4) handleResetPin(next);
     }
   };
 
   const handleDelete = () => {
     if (step === "phone") setPhone((v) => v.slice(0, -1));
     else if (step === "pin") setPin((v) => v.slice(0, -1));
+    else if (step === "otp") setOtp((v) => v.slice(0, -1));
+    else if (step === "newpin") setNewPin((v) => v.slice(0, -1));
   };
 
   const handlePhoneConfirm = () => {
@@ -46,13 +68,61 @@ const AuthScreen = () => {
     setStep("pin");
   };
 
-  const handleLogin = async (pinValue: string) => {
+  const sendCode = async () => {
+    setNotice("");
+    const res = await requestOtp(phone);
+    if (!res.ok) setError((res.error ?? "Could not send code").toUpperCase());
+    else setNotice("CODE SENT BY SMS");
+  };
+
+  const handleLogin = async (pinValue: string, otpValue?: string) => {
     setLoading(true);
     setError("");
-    const result = await login(phone, pinValue);
+    const result = await login(phone, pinValue, otpValue);
     if (result.error) {
-      setError(result.error.toUpperCase());
+      if (result.code === "otp_required") {
+        setOtp("");
+        setStep("otp");
+        setResetting(false);
+        if (!otpValue) await sendCode();
+        else setError(result.error.toUpperCase());
+      } else if (result.code === "otp_invalid") {
+        setOtp("");
+        setError(result.error.toUpperCase());
+      } else {
+        setError(result.error.toUpperCase());
+        setPin("");
+        if (step === "otp") { setOtp(""); setStep("pin"); }
+      }
+    }
+    setLoading(false);
+  };
+
+  const startReset = async () => {
+    setError("");
+    setOtp("");
+    setNewPin("");
+    setResetting(true);
+    setStep("otp");
+    await sendCode();
+  };
+
+  const handleResetPin = async (pinValue: string) => {
+    setLoading(true);
+    setError("");
+    const res = await resetPin(phone, otp, pinValue);
+    if (!res.ok) {
+      setError((res.error ?? "Could not reset PIN").toUpperCase());
+      setOtp("");
+      setNewPin("");
+      if (res.code === "otp_invalid") setStep("otp");
+    } else {
+      setResetting(false);
+      setOtp("");
+      setNewPin("");
       setPin("");
+      setStep("pin");
+      setNotice("PIN RESET. SIGN IN WITH NEW PIN");
     }
     setLoading(false);
   };
@@ -75,6 +145,10 @@ const AuthScreen = () => {
     setPhone("");
     setPin("");
     setName("");
+    setOtp("");
+    setNewPin("");
+    setResetting(false);
+    setNotice("");
     setError("");
     setStep("phone");
   };
@@ -148,26 +222,27 @@ const AuthScreen = () => {
       )}
 
       {/* PIN step */}
-      {step === "pin" && (
+      {(step === "pin" || step === "otp" || step === "newpin") && (
         <div className="flex flex-col flex-1">
           <div className="flex-1 flex flex-col items-center justify-center">
-            <Lock className="w-6 h-6 text-primary mb-2" />
+            {step === "otp" ? <ShieldCheck className="w-6 h-6 text-primary mb-2" /> : <Lock className="w-6 h-6 text-primary mb-2" />}
             <p className="text-[10px] text-muted-foreground mb-1 font-mono uppercase tracking-wider">
-              {mode === "login" ? "Enter PIN" : "Create 4-Digit PIN"}
+              {step === "otp" ? "Enter 6-Digit SMS Code" : step === "newpin" ? "Create New 4-Digit PIN" : mode === "login" ? "Enter PIN" : "Create 4-Digit PIN"}
             </p>
             <p className="text-[10px] text-muted-foreground mb-3 font-mono">{phone}</p>
             <div className="flex gap-4 mb-3">
-              {[0, 1, 2, 3].map((i) => (
+              {Array.from({ length: step === "otp" ? 6 : 4 }, (_, i) => i).map((i) => (
                 <div
                   key={i}
                   className={`w-4 h-4 rounded-full border-2 transition-all ${
-                    i < pin.length ? "bg-primary border-primary shadow-[0_0_8px_hsl(160_100%_45%/0.5)]" : "border-border"
+                    i < (step === "otp" ? otp : step === "newpin" ? newPin : pin).length ? "bg-primary border-primary shadow-[0_0_8px_hsl(160_100%_45%/0.5)]" : "border-border"
                   }`}
                 />
               ))}
             </div>
           </div>
 
+          {notice && !error && <p className="text-primary text-[10px] text-center mb-2 font-mono">{notice}</p>}
           {error && <p className="text-destructive text-[10px] text-center mb-2 font-mono">{error}</p>}
           {loading && <p className="text-primary text-[10px] text-center mb-2 animate-pulse font-mono">PROCESSING...</p>}
 
@@ -186,8 +261,24 @@ const AuthScreen = () => {
             )}
           </div>
 
+          {step === "otp" && (
+            <button
+              onClick={() => { setError(""); sendCode(); }}
+              className="text-[10px] text-primary text-center mb-2 hover:underline font-mono uppercase tracking-wider"
+            >
+              Resend Code
+            </button>
+          )}
+          {step === "pin" && mode === "login" && (
+            <button
+              onClick={startReset}
+              className="text-[10px] text-primary text-center mb-2 hover:underline font-mono uppercase tracking-wider"
+            >
+              Forgot PIN?
+            </button>
+          )}
           <button
-            onClick={() => { setStep("phone"); setPin(""); setError(""); }}
+            onClick={() => { setStep("phone"); setPin(""); setOtp(""); setNewPin(""); setResetting(false); setNotice(""); setError(""); }}
             className="text-[10px] text-muted-foreground text-center hover:text-foreground transition-colors font-mono uppercase tracking-wider"
           >
             ← Change Number

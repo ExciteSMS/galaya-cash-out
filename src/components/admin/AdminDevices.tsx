@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Smartphone, Unlink, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/adminApi";
+import { deviceFaults } from "@/lib/deviceHealth";
 
 interface DeviceRow {
   id: string;
@@ -15,6 +16,13 @@ interface DeviceRow {
   is_active: boolean;
   first_seen: string;
   last_seen: string;
+  latitude: number | null;
+  longitude: number | null;
+  location_accuracy: number | null;
+  location_updated_at: string | null;
+  location_status: string | null;
+  battery_level: number | null;
+  is_charging: boolean | null;
   merchant_name?: string;
   merchant_phone?: string;
 }
@@ -114,16 +122,18 @@ export default function AdminDevices() {
               <th className="text-left px-3 py-2">Device</th>
               <th className="text-left px-3 py-2">First seen</th>
               <th className="text-left px-3 py-2">Last seen</th>
+              <th className="text-left px-3 py-2">Location</th>
+              <th className="text-left px-3 py-2">Health</th>
               <th className="text-left px-3 py-2">Status</th>
               <th className="px-3 py-2" />
             </tr>
           </thead>
           <tbody>
             {loading && (
-              <tr><td colSpan={7} className="text-center py-6 text-muted-foreground text-xs">Loading…</td></tr>
+              <tr><td colSpan={9} className="text-center py-6 text-muted-foreground text-xs">Loading…</td></tr>
             )}
             {!loading && filtered.length === 0 && (
-              <tr><td colSpan={7} className="text-center py-6 text-muted-foreground text-xs">No active devices.</td></tr>
+              <tr><td colSpan={9} className="text-center py-6 text-muted-foreground text-xs">No active devices.</td></tr>
             )}
             {filtered.map((r) => (
               <tr key={r.id} className="border-t border-border">
@@ -139,20 +149,49 @@ export default function AdminDevices() {
                 <td className="px-3 py-2 text-xs text-muted-foreground">{new Date(r.first_seen).toLocaleString()}</td>
                 <td className="px-3 py-2 text-xs text-muted-foreground">{new Date(r.last_seen).toLocaleString()}</td>
                 <td className="px-3 py-2 text-xs">
+                  {r.latitude != null && r.longitude != null ? (
+                    <div>
+                      <a
+                        href={`https://www.google.com/maps?q=${r.latitude},${r.longitude}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-primary underline"
+                      >
+                        {r.latitude.toFixed(4)}, {r.longitude.toFixed(4)}
+                      </a>
+                      <div className="text-[10px] text-muted-foreground">
+                        {r.location_updated_at ? new Date(r.location_updated_at).toLocaleString() : ""}
+                        {r.location_accuracy != null ? ` · ±${Math.round(r.location_accuracy)}m` : ""}
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">{r.location_status === "denied" ? "Permission denied" : "Unknown"}</span>
+                  )}
+                </td>
+                <td className="px-3 py-2 text-xs">
+                  {(() => {
+                    const faults = deviceFaults(r);
+                    if (faults.length) {
+                      return <span className="px-2 py-0.5 rounded bg-destructive/10 text-destructive" title={faults.join("\n")}>Faulty: {faults[0]}{faults.length > 1 ? ` +${faults.length - 1}` : ""}</span>;
+                    }
+                    return <span className="text-muted-foreground">{r.is_bound ? `OK${r.battery_level != null ? ` · ${r.battery_level}%` : ""}` : "—"}</span>;
+                  })()}
+                </td>
+                <td className="px-3 py-2 text-xs">
                   {r.is_bound ? (
                     <span className="px-2 py-0.5 rounded bg-primary/10 text-primary">Bound</span>
                   ) : (
-                    <span className="px-2 py-0.5 rounded bg-muted text-muted-foreground">Seen</span>
+                    <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-600" title="A login from this device was blocked because the account is bound elsewhere">Blocked attempt</span>
                   )}
                 </td>
                 <td className="px-3 py-2 text-right">
-                  <button
+                  {r.is_bound && <button
                     onClick={() => release(r)}
                     className="flex items-center gap-1 px-2 py-1 text-xs rounded border border-border hover:bg-destructive/10 hover:text-destructive"
                     title="Release binding so the merchant can sign in from a new device"
                   >
                     <Unlink className="h-3 w-3" /> Release
-                  </button>
+                  </button>}
                 </td>
               </tr>
             ))}

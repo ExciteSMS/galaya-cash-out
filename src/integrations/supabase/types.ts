@@ -10,7 +10,32 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.18"
+  }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -287,6 +312,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      login_attempts: {
+        Row: {
+          failed_count: number
+          last_failed_at: string | null
+          locked_until: string | null
+          phone: string
+          updated_at: string
+        }
+        Insert: {
+          failed_count?: number
+          last_failed_at?: string | null
+          locked_until?: string | null
+          phone: string
+          updated_at?: string
+        }
+        Update: {
+          failed_count?: number
+          last_failed_at?: string | null
+          locked_until?: string | null
+          phone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      login_otps: {
+        Row: {
+          attempts: number
+          code_hash: string
+          expires_at: string
+          phone: string
+          sent_at: string
+          verified_until: string | null
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          expires_at: string
+          phone: string
+          sent_at?: string
+          verified_until?: string | null
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          expires_at?: string
+          phone?: string
+          sent_at?: string
+          verified_until?: string | null
+        }
+        Relationships: []
       }
       loyalty_points: {
         Row: {
@@ -977,6 +1053,8 @@ export type Database = {
       }
       user_devices: {
         Row: {
+          app_online: boolean
+          battery_level: number | null
           created_at: string
           device_id: string
           device_name: string | null
@@ -984,12 +1062,20 @@ export type Database = {
           id: string
           is_active: boolean
           is_bound: boolean
+          is_charging: boolean | null
           last_seen: string
+          latitude: number | null
+          location_accuracy: number | null
+          location_status: string | null
+          location_updated_at: string | null
+          longitude: number | null
           platform: string | null
           user_agent: string | null
           user_id: string
         }
         Insert: {
+          app_online?: boolean
+          battery_level?: number | null
           created_at?: string
           device_id: string
           device_name?: string | null
@@ -997,12 +1083,20 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_bound?: boolean
+          is_charging?: boolean | null
           last_seen?: string
+          latitude?: number | null
+          location_accuracy?: number | null
+          location_status?: string | null
+          location_updated_at?: string | null
+          longitude?: number | null
           platform?: string | null
           user_agent?: string | null
           user_id: string
         }
         Update: {
+          app_online?: boolean
+          battery_level?: number | null
           created_at?: string
           device_id?: string
           device_name?: string | null
@@ -1010,7 +1104,13 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_bound?: boolean
+          is_charging?: boolean | null
           last_seen?: string
+          latitude?: number | null
+          location_accuracy?: number | null
+          location_status?: string | null
+          location_updated_at?: string | null
+          longitude?: number | null
           platform?: string | null
           user_agent?: string | null
           user_id?: string
@@ -1277,6 +1377,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       app_role: ["admin", "user"],

@@ -130,7 +130,7 @@ fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/zra-invoice`, { method: "POS
                     const m = txRow.merchants as any;
                     fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-sms`, {
                       method: "POST",
-                      headers: { "Content-Type": "application/json" },
+                      headers: { "Content-Type": "application/json", Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}` },
                       body: JSON.stringify({
                         merchant_phone: m?.phone_number,
                         merchant_name: m?.name,
@@ -211,7 +211,7 @@ fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/zra-invoice`, { method: "POS
                     const m = txRow.merchants as any;
                     fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-sms`, {
                       method: "POST",
-                      headers: { "Content-Type": "application/json" },
+                      headers: { "Content-Type": "application/json", Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}` },
                       body: JSON.stringify({
                         merchant_phone: m?.phone_number,
                         merchant_name: m?.name,
@@ -294,7 +294,7 @@ fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/zra-invoice`, { method: "POS
             const merchantInfo = txRow.merchants as any;
             await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-sms`, {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}` },
               body: JSON.stringify({
                 merchant_phone: merchantInfo?.phone_number,
                 merchant_name: merchantInfo?.name,

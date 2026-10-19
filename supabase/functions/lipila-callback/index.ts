@@ -11,13 +11,25 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const data = await req.json();
-    console.log("Lipila callback received:", JSON.stringify(data));
-
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
+
+    // Callbacks must carry the shared secret configured in Admin > Settings (?token=...).
+    const { data: secretRow } = await supabase.from("app_settings").select("value").eq("key", "callback_secret").maybeSingle();
+    const expected = secretRow?.value || "";
+    const provided = new URL(req.url).searchParams.get("token") || "";
+    if (!expected || provided.length !== expected.length || provided !== expected) {
+      console.warn("Lipila callback rejected: bad or missing token");
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const data = await req.json();
+    console.log("Lipila callback received:", JSON.stringify(data));
 
     const referenceId = data.referenceId;
     const identifier = data.identifier;
@@ -39,11 +51,19 @@ Deno.serve(async (req: Request) => {
     }
 
     // Find and update transaction by reference
-    const lookupRef = identifier || referenceId;
+    const refs = [identifier, referenceId].filter((r): r is string => typeof r === "string" && /^[\w.-]{1,100}$/.test(r));
+    if (refs.length === 0) {
+      return new Response(JSON.stringify({ error: "Invalid reference" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    // Only pending transactions can change, so a replayed or forged callback can't flip a settled payment.
     const { data: updatedRows, error } = await supabase
       .from("transactions")
       .update({ status: dbStatus })
-      .or(`reference.eq.${lookupRef},reference.eq.${referenceId}`)
+      .in("reference", refs)
+      .eq("status", "pending")
       .select("*, merchants(name, phone_number)");
 
     if (error) {
@@ -58,7 +78,7 @@ fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/zra-invoice`, { method: "POS
         const merchantInfo = tx.merchants as any;
         await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-sms`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}` },
           body: JSON.stringify({
             merchant_phone: merchantInfo?.phone_number,
             merchant_name: merchantInfo?.name,

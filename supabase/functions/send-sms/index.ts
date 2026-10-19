@@ -89,6 +89,17 @@ Deno.serve(async (req: Request) => {
   try {
     const body = await req.json();
 
+    // Everything except admin custom mode is an internal notification and must come from another edge function.
+    if (body.mode !== "custom") {
+      const bearer = (req.headers.get("Authorization") || "").replace("Bearer ", "");
+      if (!bearer || bearer !== Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     // ---- Admin custom SMS mode ----
     // Payload: { mode: "custom", recipients: string[], message: string, category?: string, merchant_ids?: string[] }
     if (body.mode === "custom") {

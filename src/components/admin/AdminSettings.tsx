@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Eye, EyeOff, MessageSquare, Save, Zap } from "lucide-react";
+import { Eye, EyeOff, MessageSquare, Save, ShieldCheck, Zap } from "lucide-react";
 
 export default function AdminSettings() {
   const [settings, setSettings] = useState<Record<string, string>>({});
@@ -38,7 +38,7 @@ export default function AdminSettings() {
     setSaving(true);
     try {
       const gatewayAndSmsKeys = Object.keys(settings).filter(
-        (k) => k.startsWith("gateway_") || k.startsWith("moneyunify_") || k.startsWith("lipila_") || k.startsWith("lenco_") || k.startsWith("sms_") || k.startsWith("excite_")
+        (k) => k.startsWith("gateway_") || k.startsWith("moneyunify_") || k.startsWith("lipila_") || k.startsWith("lenco_") || k.startsWith("sms_") || k.startsWith("excite_") || k.startsWith("otp_")
       );
       await Promise.all(gatewayAndSmsKeys.map((key) => upsertSetting(key, settings[key])));
       await logAudit("settings_updated", "app_settings", undefined, { keys: gatewayAndSmsKeys });
@@ -53,11 +53,53 @@ export default function AdminSettings() {
     return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
   }
 
-  const callbackUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/lipila-callback`;
+  const callbackUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/lipila-callback${settings.callback_secret ? `?token=${settings.callback_secret}` : ""}`;
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold font-display">Settings</h1>
+
+      {/* Login security */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ShieldCheck className="h-5 w-5 text-primary" />
+            Login Security
+          </CardTitle>
+          <CardDescription>Applies to all merchants. Accounts are always locked for 15 minutes after 10 failed attempts.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between border rounded-lg p-4">
+            <div>
+              <h3 className="font-semibold text-foreground">Require SMS code after failed PIN attempts</h3>
+              <p className="text-xs text-muted-foreground">
+                When on, a merchant who enters a wrong PIN {settings.otp_failed_login_threshold || "4"} times must confirm a code sent to their phone. Needs SMS configured below.
+              </p>
+            </div>
+            <Switch
+              checked={settings.otp_after_failed_logins === "true"}
+              onCheckedChange={(checked) => handleToggle("otp_after_failed_logins", checked)}
+            />
+          </div>
+          {settings.otp_after_failed_logins === "true" && (
+            <div className="max-w-[200px]">
+              <Label htmlFor="otp-threshold">Failed attempts before code</Label>
+              <Input
+                id="otp-threshold"
+                type="number"
+                min={1}
+                max={9}
+                value={settings.otp_failed_login_threshold || "4"}
+                onChange={(e) => handleChange("otp_failed_login_threshold", String(Math.min(9, Math.max(1, parseInt(e.target.value || "4", 10) || 4))))}
+                className="mt-1"
+              />
+            </div>
+          )}
+          {settings.otp_after_failed_logins === "true" && settings.sms_enabled !== "true" && (
+            <p className="text-xs text-destructive">SMS is not enabled, so codes cannot be delivered. Enable SMS first or merchants may be unable to sign in.</p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Payment Gateways */}
       <Card>
