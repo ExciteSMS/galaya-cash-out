@@ -140,7 +140,7 @@ const SettingsScreen = () => {
         <button onClick={logout} className="flex items-center gap-2 text-destructive text-sm font-medium hover:underline">
           <LogOut className="w-4 h-4" /> {t("settings.signOut")}
         </button>
-        <p className="text-[10px] text-muted-foreground mt-3">Galaya Payment Solution v2.0</p>
+        <p className="text-[10px] text-muted-foreground mt-3">GalaPesa Payment Solution v2.0</p>
       </div>
     </div>
   );

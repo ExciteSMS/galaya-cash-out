@@ -143,7 +143,7 @@ Deno.serve(async (req: Request) => {
             phone: localPhone,
             operator: lencoOperator,
             amount: String(settleAmount),
-            narration: `Galaya withdrawal ${refId}`,
+            narration: `GalaPesa withdrawal ${refId}`,
           }),
         });
         const data = await resp.json().catch(() => ({}));
@@ -175,7 +175,7 @@ Deno.serve(async (req: Request) => {
             amount: settleAmount,
             accountNumber: intlPhone,
             currency: "ZMW",
-            narration: `Galaya withdrawal ${refId}`,
+            narration: `GalaPesa withdrawal ${refId}`,
           }),
         });
         const data = await resp.json().catch(() => ({}));

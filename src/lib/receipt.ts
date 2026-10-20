@@ -9,7 +9,7 @@ export interface ReceiptData {
 
 export function buildReceiptText(merchantName: string | undefined, tx: ReceiptData): string {
   return [
-    `--- ${merchantName || "GALAYA"} ---`,
+    `--- ${merchantName || "GALAPESA"} ---`,
     `Payment Receipt`,
     ``,
     `Date: ${new Date(tx.created_at).toLocaleString()}`,
@@ -21,7 +21,7 @@ export function buildReceiptText(merchantName: string | undefined, tx: ReceiptDa
     `Ref: ${tx.reference || "N/A"}`,
     `Status: PAID ✓`,
     ``,
-    `Powered by Galaya`,
+    `Powered by GalaPesa`,
   ].join("\n");
 }
 

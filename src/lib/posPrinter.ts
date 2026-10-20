@@ -158,7 +158,7 @@ export function buildReceiptLines(transaction: {
   const divider = "--------------------------------";
 
   return [
-    { text: merchantName || "GALAYA", bold: true, align: "center" as const, size: "lg" as const },
+    { text: merchantName || "GALAPESA", bold: true, align: "center" as const, size: "lg" as const },
     { text: "Payment Receipt", align: "center" as const, size: "sm" as const },
     { text: divider, align: "center" as const },
     { text: `Date: ${date.toLocaleDateString()}` },
@@ -175,6 +175,6 @@ export function buildReceiptLines(transaction: {
     { text: `Status: ✓ PAID`, bold: true },
     { text: divider, align: "center" as const },
     { text: "Thank you for your payment!", align: "center" as const, size: "sm" as const },
-    { text: "Powered by Galaya", align: "center" as const, size: "sm" as const },
+    { text: "Powered by GalaPesa", align: "center" as const, size: "sm" as const },
   ];
 }

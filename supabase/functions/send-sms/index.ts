@@ -49,7 +49,7 @@ async function getSmsSettings(): Promise<{
   return {
     enabled: map.sms_enabled === "true",
     apiKey: map.excite_sms_api_key || "",
-    senderId: map.excite_sms_sender_id || "Galaya",
+    senderId: map.excite_sms_sender_id || "GalaPesa",
     notifyMerchant: map.sms_notify_merchant !== "false",
     notifyCustomer: map.sms_notify_customer !== "false",
   };
@@ -266,7 +266,7 @@ Deno.serve(async (req: Request) => {
 
     // SMS to merchant
     if (smsConfig.notifyMerchant && merchant_phone) {
-      const msg = `Payment received! K${amount} from ${customer_phone} via ${provider} Money. Ref: ${reference}. - ${merchant_name || "Galaya"}`;
+      const msg = `Payment received! K${amount} from ${customer_phone} via ${provider} Money. Ref: ${reference}. - ${merchant_name || "GalaPesa"}`;
       results.merchant = await sendSms(smsConfig.apiKey, smsConfig.senderId, merchant_phone, msg);
     }
 

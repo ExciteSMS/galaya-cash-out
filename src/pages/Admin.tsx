@@ -107,7 +107,7 @@ export default function Admin() {
         <div className="flex items-center gap-2">
           <Shield className="h-4 w-4 text-primary" />
           <span className="font-display font-bold text-primary text-xs tracking-wider uppercase">
-            Galaya Admin
+            GalaPesa Admin
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -135,7 +135,7 @@ export default function Admin() {
         <div className="hidden md:flex p-4 border-b border-border items-center gap-2">
           <Shield className="h-5 w-5 text-primary" />
           <span className="font-display font-bold text-primary text-sm tracking-wider uppercase">
-            Galaya Admin
+            GalaPesa Admin
           </span>
         </div>
 

@@ -46,7 +46,7 @@ export default function AdminScheduledReports() {
 
   const exportReport = () => {
     const lines = [
-      `Galaya Platform Report — ${period === "today" ? "Today" : period === "7d" ? "Last 7 Days" : "Last 30 Days"}`,
+      `GalaPesa Platform Report — ${period === "today" ? "Today" : period === "7d" ? "Last 7 Days" : "Last 30 Days"}`,
       `Generated: ${format(new Date(), "yyyy-MM-dd HH:mm")}`,
       "",
       `Total Transactions: ${stats.total}`,
@@ -64,7 +64,7 @@ export default function AdminScheduledReports() {
     const blob = new Blob([lines], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = `galaya-report-${period}-${format(new Date(), "yyyyMMdd")}.csv`;
+    a.href = url; a.download = `galapesa-report-${period}-${format(new Date(), "yyyyMMdd")}.csv`;
     a.click(); URL.revokeObjectURL(url);
     toast.success("Report downloaded");
   };

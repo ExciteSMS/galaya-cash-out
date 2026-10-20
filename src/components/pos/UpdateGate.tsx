@@ -17,7 +17,7 @@ export default function UpdateGate() {
   return (
     <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4 bg-background p-6 text-center">
       <h1 className="text-xl font-semibold">Update required</h1>
-      <p className="text-muted-foreground">A new version of Galaya is available. Please update to continue.</p>
+      <p className="text-muted-foreground">A new version of GalaPesa is available. Please update to continue.</p>
       <Button onClick={() => window.open(update.url, "_blank")}>Update now</Button>
     </div>
   );

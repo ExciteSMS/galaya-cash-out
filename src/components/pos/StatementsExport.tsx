@@ -41,7 +41,7 @@ export default function StatementsExport({ onBack }: { onBack: () => void }) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `galaya-statement-${merchant?.name?.replace(/\s+/g, "-").toLowerCase() || "merchant"}-${format(new Date(), "yyyy-MM-dd")}.csv`;
+      a.download = `galapesa-statement-${merchant?.name?.replace(/\s+/g, "-").toLowerCase() || "merchant"}-${format(new Date(), "yyyy-MM-dd")}.csv`;
       a.click();
       URL.revokeObjectURL(url);
       toast.success(`Exported ${filtered.length} transactions`);

@@ -37,7 +37,7 @@ const ProviderSelect = ({ onSelect }: ProviderSelectProps) => {
       </div>
 
       <div className="mt-4 text-center text-[10px] text-muted-foreground">
-        ── GALAYA PAYMENT SOLUTION ──
+        ── GALAPESA PAYMENT SOLUTION ──
       </div>
     </div>
   );

@@ -14,7 +14,7 @@ const ATMScreen = ({ children }: ATMScreenProps) => {
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
             <span className="font-display text-xs text-primary tracking-[0.3em] uppercase">
-              Galaya Payment Solution
+              GalaPesa Payment Solution
             </span>
           </div>
           <div className="text-[10px] text-muted-foreground">v2.1</div>

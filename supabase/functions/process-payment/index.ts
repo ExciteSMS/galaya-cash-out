@@ -97,7 +97,7 @@ async function processWithLenco(
     phone: formattedPhone,
     operator: providerToLencoOperator(provider),
     amount: String(amount),
-    narration: "Galaya payment",
+    narration: "GalaPesa payment",
   };
 
   console.log("Calling Lenco MoMo Collection:", { phone: formattedPhone, amount, reference });
@@ -178,7 +178,7 @@ async function processWithLipila(phone: string, amount: number, apiKey: string, 
   const body = {
     referenceId: reference,
     amount: Number(amount),
-    narration: "Galaya payment",
+    narration: "GalaPesa payment",
     accountNumber: formattedPhone,
     currency: "ZMW",
   };

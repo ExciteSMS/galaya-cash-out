@@ -78,7 +78,7 @@ function buildReceiptHTML(transaction: Transaction, merchantName?: string, zra: 
 </head>
 <body>
   <div class="center">
-    <div class="logo">${merchantName || "GALAYA"}</div>
+    <div class="logo">${merchantName || "GALAPESA"}</div>
     <div class="sub">Payment Receipt</div>
   </div>
   <div class="divider"></div>
@@ -98,7 +98,7 @@ function buildReceiptHTML(transaction: Transaction, merchantName?: string, zra: 
   <div class="divider"></div>
   <div class="footer">
     <p>Thank you for your payment!</p>
-    <p>Powered by Galaya</p>
+    <p>Powered by GalaPesa</p>
   </div>
   <script>window.onload = function() { setTimeout(function() { window.print(); }, 300); };</script>
 </body>

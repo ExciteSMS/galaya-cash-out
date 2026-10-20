@@ -162,7 +162,7 @@ const AuthScreen = () => {
         <div className="w-14 h-14 border-2 border-primary rounded-lg mx-auto flex items-center justify-center mb-2">
           <span className="text-primary font-display font-bold text-xl text-glow">G</span>
         </div>
-        <h1 className="font-display font-bold text-xl text-primary text-glow">GALAYA POS</h1>
+        <h1 className="font-display font-bold text-xl text-primary text-glow">GALAPESA POS</h1>
         <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-[0.2em]">{t("auth.terminal")}</p>
       </div>
 

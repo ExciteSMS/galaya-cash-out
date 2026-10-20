@@ -20,7 +20,7 @@ const Receipt = ({ transaction, onNewTransaction }: ReceiptProps) => {
         {/* Receipt */}
         <div className="w-full bg-background border border-dashed border-border rounded p-4 text-xs space-y-2 font-mono">
           <div className="text-center border-b border-dashed border-border pb-2 mb-2">
-            <p className="font-display text-primary text-sm tracking-widest">GALAYA</p>
+            <p className="font-display text-primary text-sm tracking-widest">GALAPESA</p>
             <p className="text-[9px] text-muted-foreground">Payment Solution</p>
           </div>
 
@@ -34,7 +34,7 @@ const Receipt = ({ transaction, onNewTransaction }: ReceiptProps) => {
           </div>
           <div className="flex justify-between"><span className="text-muted-foreground">Date:</span><span className="text-foreground">{timestamp.toLocaleString()}</span></div>
           <div className="text-center border-t border-dashed border-border pt-2 mt-2">
-            <p className="text-[9px] text-muted-foreground">Thank you for using Galaya</p>
+            <p className="text-[9px] text-muted-foreground">Thank you for using GalaPesa</p>
           </div>
         </div>
       </div>

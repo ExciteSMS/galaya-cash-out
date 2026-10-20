@@ -283,7 +283,7 @@ export default function AdminSettings() {
                   id="sms-sender"
                   value={settings.excite_sms_sender_id || ""}
                   onChange={(e) => handleChange("excite_sms_sender_id", e.target.value)}
-                  placeholder="Galaya"
+                  placeholder="GalaPesa"
                   className="mt-1"
                 />
                 <p className="text-xs text-muted-foreground mt-1">Name that appears as the SMS sender (max 11 chars)</p>

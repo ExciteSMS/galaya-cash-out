@@ -52,7 +52,7 @@ async function getSettings() {
     otpEnabled: map.otp_after_failed_logins === "true",
     threshold: Number.isFinite(threshold) && threshold > 0 ? threshold : 4,
     apiKey: map.excite_sms_api_key || "",
-    senderId: map.excite_sms_sender_id || "Galaya",
+    senderId: map.excite_sms_sender_id || "GalaPesa",
   };
 }
 
@@ -105,7 +105,7 @@ async function sendOtp(phone: string) {
   if (!cfg.apiKey) return json({ error: "SMS is not configured. Contact support.", code: "sms_unavailable" }, 503);
 
   const code = randomCode();
-  const ok = await sendSms(cfg.apiKey, cfg.senderId, phone, `Your Galaya verification code is ${code}. It expires in ${OTP_TTL_MINUTES} minutes. Never share it.`);
+  const ok = await sendSms(cfg.apiKey, cfg.senderId, phone, `Your GalaPesa verification code is ${code}. It expires in ${OTP_TTL_MINUTES} minutes. Never share it.`);
   if (!ok) return json({ error: "Could not send the code. Try again shortly.", code: "sms_failed" }, 502);
 
   await admin.from("login_otps").upsert({

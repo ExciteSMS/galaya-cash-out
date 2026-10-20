@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">galaya-cash-out</string>
-    <string name="title_activity_main">galaya-cash-out</string>
+    <string name="app_name">GalaPesa</string>
+    <string name="title_activity_main">GalaPesa</string>
     <string name="package_name">com.galaya.cashout</string>
     <string name="custom_url_scheme">com.galaya.cashout</string>
 </resources>

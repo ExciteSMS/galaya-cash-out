@@ -44,10 +44,10 @@ interface SmsLog {
 
 const TEMPLATES: { label: string; category: string; text: string }[] = [
   { label: "Custom", category: "custom", text: "" },
-  { label: "Receipt", category: "receipt", text: "Galaya: Payment of K{amount} confirmed. Ref: {reference}. Thank you!" },
-  { label: "Promotion", category: "promo", text: "Galaya: Special offer for you! {details}. Reply STOP to opt out." },
-  { label: "Reminder", category: "reminder", text: "Galaya reminder: {details}." },
-  { label: "Maintenance", category: "system", text: "Galaya: Scheduled maintenance on {date}. Service may be briefly unavailable." },
+  { label: "Receipt", category: "receipt", text: "GalaPesa: Payment of K{amount} confirmed. Ref: {reference}. Thank you!" },
+  { label: "Promotion", category: "promo", text: "GalaPesa: Special offer for you! {details}. Reply STOP to opt out." },
+  { label: "Reminder", category: "reminder", text: "GalaPesa reminder: {details}." },
+  { label: "Maintenance", category: "system", text: "GalaPesa: Scheduled maintenance on {date}. Service may be briefly unavailable." },
 ];
 
 export default function AdminCustomSMS() {

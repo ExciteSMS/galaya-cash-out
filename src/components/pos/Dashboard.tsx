@@ -66,7 +66,7 @@ const Dashboard = ({ transactions, onNewSale, onRepeatSale }: DashboardProps) =>
     <div className="flex flex-col gap-3 p-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-bold font-display text-primary text-glow">GALAYA POS</h1>
+          <h1 className="text-lg font-bold font-display text-primary text-glow">GALAPESA POS</h1>
           <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">
             {new Date().toLocaleDateString("en-ZM", { weekday: "short", month: "short", day: "numeric" })}
           </p>

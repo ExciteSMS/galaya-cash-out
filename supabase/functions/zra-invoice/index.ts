@@ -180,7 +180,7 @@ Deno.serve(async (req) => {
       ...taxbl, ...taxR, ...taxA,
       totTaxblAmt: total, totTaxAmt: taxAmt, totAmt: total,
       prchrAcptcYn: "N", remark: null,
-      regrId: "galaya", regrNm: "Galaya POS", modrId: "galaya", modrNm: "Galaya POS",
+      regrId: "galaya", regrNm: "GalaPesa POS", modrId: "galaya", modrNm: "GalaPesa POS",
       saleCtyCd: "1", lpoNumber: null, currencyTyCd: "ZMW", exchangeRt: "1", destnCountryCd: "",
       dbtRsnCd: "", invcAdjustReason: "",
       itemList: [{

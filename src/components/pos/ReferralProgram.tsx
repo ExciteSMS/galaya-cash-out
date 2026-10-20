@@ -57,7 +57,7 @@ const ReferralProgram = ({ onBack }: { onBack: () => void }) => {
   };
 
   const share = (code: string) => {
-    const text = `Join Galaya POS using my referral code ${code} and we both earn K50!`;
+    const text = `Join GalaPesa POS using my referral code ${code} and we both earn K50!`;
     if (navigator.share) navigator.share({ text }).catch(() => {});
     else copy(text);
   };

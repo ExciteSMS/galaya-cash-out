@@ -1,4 +1,4 @@
-# Galaya Cash Out
+# GalaPesa
 
 Mobile-money POS and admin app (React + Vite + Supabase).
 

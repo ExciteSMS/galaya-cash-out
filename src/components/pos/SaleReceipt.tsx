@@ -119,7 +119,7 @@ const SaleReceipt = ({ transaction, onNewSale, onGoHome }: SaleReceiptProps) => 
           showCheck ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
         }`}>
           <div className="text-center pb-3 border-b border-dashed border-border">
-            <p className="font-display font-bold text-foreground">{merchant?.name || "GALAYA"}</p>
+            <p className="font-display font-bold text-foreground">{merchant?.name || "GALAPESA"}</p>
             <p className="text-[10px] text-muted-foreground">Payment Receipt</p>
           </div>
 

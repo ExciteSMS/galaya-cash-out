@@ -25,7 +25,7 @@ export default function MerchantQRCode() {
     if (navigator.share) {
       await navigator.share({
         title: `Pay ${merchant.name}`,
-        text: `Pay ${merchant.name} via Galaya`,
+        text: `Pay ${merchant.name} via GalaPesa`,
         url: paymentUrl,
       });
     } else {
@@ -41,7 +41,7 @@ export default function MerchantQRCode() {
         <html><body style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;">
           <h2>${merchant.name}</h2>
           <img src="${qrDataUrl}" style="width:200px;height:200px;margin:16px 0;" />
-          <p style="font-size:12px;color:#666;">Scan to pay via Galaya</p>
+          <p style="font-size:12px;color:#666;">Scan to pay via GalaPesa</p>
           <p style="font-size:10px;color:#999;word-break:break-all;max-width:300px;text-align:center;">${paymentUrl}</p>
         </body></html>
       `);

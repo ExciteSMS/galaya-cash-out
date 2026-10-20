@@ -46,7 +46,7 @@ function exportPDF(transactions: Transaction[]) {
   const html = `
     <html><head><title>Transaction Report</title></head>
     <body style="font-family:Arial,sans-serif;margin:20px;">
-      <h1 style="font-size:18px;color:#333;">Galaya Transaction Report</h1>
+      <h1 style="font-size:18px;color:#333;">GalaPesa Transaction Report</h1>
       <p style="font-size:12px;color:#666;">Generated: ${new Date().toLocaleString()} · ${transactions.length} transactions</p>
       <table style="width:100%;border-collapse:collapse;margin-top:16px;">
         <thead>

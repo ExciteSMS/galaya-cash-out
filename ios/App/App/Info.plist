@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>galaya-cash-out</string>
+        <string>GalaPesa</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -48,8 +48,8 @@
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>Galaya uses the camera to scan product barcodes.</string>
+	<string>GalaPesa uses the camera to scan product barcodes.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Galaya shares this device's location with your administrator for device tracking.</string>
+	<string>GalaPesa shares this device's location with your administrator for device tracking.</string>
 </dict>
 </plist>
